@@ -1,0 +1,20 @@
+services:
+  postgis:
+    image: postgis/postgis:12-3.1
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_USER: ${DB_USER}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgis:/var/lib/postgresql/data
+    healthcheck:
+      test: "pg_isready -h postgis -U ${DB_USER} -d ${DB_NAME}"
+      interval: 10s
+      timeout: 2s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgis:
