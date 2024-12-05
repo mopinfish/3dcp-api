@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="ja">
-    <head>
-        <meta charset="UTF-8">
-        <title>{{ title }}</title>
-    </head>
-    <body>
-        <h1>{{ title }}</h1>
-        <p>{{ message }}</p>
-        <p><a href="{% url goto_index %}">Indexへ戻る</a></p>
-    </body>
-</html>
+{% extends 'datashare/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block contents %}
+    <p>{{ message }}</p>
+    <p><a href="{% url goto_index %}">Indexへ戻る</a></p>
+{% endblock %}
