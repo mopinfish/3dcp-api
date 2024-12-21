@@ -1,4 +1,5 @@
 from django import forms
+from .models import pub_message
 
 class frmPublish(forms.Form):
     PROJECTS = [
@@ -10,3 +11,8 @@ class frmPublish(forms.Form):
     name = forms.CharField(label='Name', max_length=50)
     project = forms.ChoiceField(label='Project', choices=PROJECTS)
     contents = forms.CharField(label='Message', widget=forms.Textarea)
+
+class frmModelPublish(forms.ModelForm):
+    class Meta:
+        model = pub_message
+        fields = ['sender', 'project', 'send_message', 'send_document']

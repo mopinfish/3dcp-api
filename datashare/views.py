@@ -1,8 +1,10 @@
 from typing import Any
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from datashare.forms import frmPublish
 from .models import pub_message
+from .forms import frmModelPublish
+
 
 # Create your views here.
 def index(request):
@@ -51,4 +53,43 @@ class mypage_dbView(TemplateView):
         context['title'] = '地理空間情報の共有サイト'
         context['msg'] = 'これはマイページ（DB接続）です。'
         context['goto_index'] = 'datashare:index'
+        context['goto_publish_db'] = 'datashare:publish_db'
         return context
+
+def publish_byModelfrmView(request):
+    params = {
+        'title': '地理空間情報の共有サイト',
+        'msg': 'これは投稿ページ（モデルフォーム）です。',
+        'form': frmModelPublish(),
+        'goto_mypage_db': 'datashare:mypage_db',
+    }
+    if (request.method == 'POST'):
+        form = frmModelPublish(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('datashare:mypage_db')
+        else:
+            form = frmModelPublish()
+
+    return render(request, 'datashare/publish_db.html', params)
+
+def edit(request, num):
+    obj = pub_message.objects.get(id=num)
+    if (request.method == 'POST'):
+        if 'btn_update' in request.POST:
+            form = frmModelPublish(request.POST, instance=obj)
+            form.save()
+            return redirect('datashare:mypage_db')
+        elif 'btn_delete' in request.POST:
+            obj.delete()
+            return redirect('datashare:mypage_db')
+        elif 'btn_back' in request.POST:
+            return redirect('datashare:mypage_db')
+    params = {
+        'title': '地理空間情報の共有サイト',
+        'msg': 'これは地理空間情報の編集ページです。',
+        'id': num,
+        'form': frmModelPublish(instance=obj),
+        'goto_mypage_db': 'datashare:mypage_db',
+    }
+    return render(request, 'datashare/edit.html', params)
