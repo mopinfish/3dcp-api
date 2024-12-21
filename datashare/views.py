@@ -2,6 +2,7 @@ from typing import Any
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from datashare.forms import frmPublish
+from .models import pub_message
 
 # Create your views here.
 def index(request):
@@ -9,6 +10,7 @@ def index(request):
         'title': '地理空間情報の共有サイト',
         'msg': 'これはトップページです。',
         'goto_mypage': 'datashare:mypage',
+        'goto_mypage_db': 'datashare:mypage_db',
     }
     return render(request, 'datashare/index.html', params)
 
@@ -39,3 +41,14 @@ class frmPublishView(TemplateView):
         self.params['answer'] = 'name=' + person + ', project=' + proj + ', contents=' + cont + '.'
         self.params['form'] = frmPublish(request.POST)
         return render(request, 'datashare/frmPublish.html', self.params)
+
+class mypage_dbView(TemplateView):
+    template_name = 'datashare/mypage_db.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pub_message_list'] = pub_message.objects.all().order_by('id')
+        context['title'] = '地理空間情報の共有サイト'
+        context['msg'] = 'これはマイページ（DB接続）です。'
+        context['goto_index'] = 'datashare:index'
+        return context

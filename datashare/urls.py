@@ -7,4 +7,5 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('mypage/', views.mypage_funcView, name='mypage'),
     path('frmPublish/', views.frmPublishView.as_view(), name='frmPublish'),
+    path('mypage_db/', views.mypage_dbView.as_view(), name='mypage_db'),
 ]
