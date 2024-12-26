@@ -19,4 +19,6 @@ pg:
 pg-ls-db:
 	docker compose exec postgis psql -U geobase -c "\l"
 
-
+## freeze to requirements.txt
+freeze:
+	pip freeze > requirements.txt
