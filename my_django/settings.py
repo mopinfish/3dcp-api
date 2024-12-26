@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []を以下のようにして、vercel.appでも開けるようにする
+ALLOWED_HOSTS = [
+    '*',
+    '.vercel.app'
+]
 
 
 # Application definition
@@ -130,6 +134,8 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+# 静的ファイルのビルドのためにSTATIC_ROOTを設定
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
