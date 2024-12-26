@@ -3,7 +3,7 @@ envs:
 activate:
 	conda activate my_django_env
 run:
-	python manage.py runserver
+	DEBUG=1 python manage.py runserver
 migrate:
 	python manage.py migrate
 makemigrations:
@@ -21,4 +21,8 @@ pg-ls-db:
 
 ## freeze to requirements.txt
 freeze:
-	pip freeze > requirements.txt
+	pip list --format=freeze > requirements.txt
+
+## create superuser
+create_superuser:
+	python manage.py custom_createsuperuser

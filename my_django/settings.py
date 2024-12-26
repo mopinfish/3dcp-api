@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 
 # プロジェクトのルートディレクトリを設定
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,7 +27,11 @@ SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []を以下のようにして、vercel.appでも開けるようにする
+ALLOWED_HOSTS = [
+    '*',
+    '.vercel.app'
+]
 
 
 # Application definition
@@ -38,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'my_django',
     'datashare',
     'account.apps.AccountConfig',
 ]
@@ -76,16 +82,30 @@ WSGI_APPLICATION = 'my_django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
+# 環境変数からデータベース接続情報を取得
+DB_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+DB_NAME = os.environ.get('POSTGRES_DATABASE', 'geobase')
+DB_USER = os.environ.get('POSTGRES_USER', 'geobase')
+DB_PASS = os.environ.get('POSTGRES_PASS', 'geobase')
+DB_PORT = os.environ.get('POSTGRES_PORT', '5432')
+# DATABASE_URLを構築
+DATABASE_URL = os.environ.get('POSTGRES_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'geobase',
-        'USER ': 'geobase',
-        'PASSWORD': 'geobase',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=DATABASE_URL
+    )
 }
+#DATABASES = {
+    #'default': {
+        #'ENGINE': 'django.db.backends.postgresql',
+        #'NAME': 'geobase',
+        #'USER ': 'geobase',
+        #'PASSWORD': 'geobase',
+        #'HOST': 'localhost',
+        #'PORT': '5432',
+    #}
+#}
 
 print('---------------------')
 print(DATABASES)
@@ -130,6 +150,8 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+# 静的ファイルのビルドのためにSTATIC_ROOTを設定
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
