@@ -1,5 +1,7 @@
 from django import forms
 from .models import pub_message
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
 
 class frmPublish(forms.Form):
     PROJECTS = [
@@ -16,3 +18,8 @@ class frmModelPublish(forms.ModelForm):
     class Meta:
         model = pub_message
         fields = ['sender', 'project', 'send_message', 'send_document']
+
+class LoginForm(AuthenticationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'password']

@@ -1,9 +1,11 @@
 from typing import Any
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from datashare.forms import frmPublish
 from .models import pub_message
-from .forms import frmModelPublish
+from .forms import frmModelPublish, LoginForm
 
 
 # Create your views here.
@@ -44,7 +46,7 @@ class frmPublishView(TemplateView):
         self.params['form'] = frmPublish(request.POST)
         return render(request, 'datashare/frmPublish.html', self.params)
 
-class mypage_dbView(TemplateView):
+class mypage_dbView(LoginRequiredMixin, TemplateView):
     template_name = 'datashare/mypage_db.html'
 
     def get_context_data(self, **kwargs):
@@ -54,6 +56,20 @@ class mypage_dbView(TemplateView):
         context['msg'] = 'これはマイページ（DB接続）です。'
         context['goto_index'] = 'datashare:index'
         context['goto_publish_db'] = 'datashare:publish_db'
+        context['goto_logout'] = 'datashare:logout'
+        context['user'] = self.request.user
+        user_id = self.request.user.id
+        sql = 'SELECT * FROM datashare_pub_message'
+        sql += ' WHERE project_id in'
+        sql += ' (SELECT distinct group_id as project_id FROM auth_user_groups'
+        sql += ' WHERE user_id = ' + str(user_id) + ')'
+        context['pub_message_list'] = pub_message.objects.raw(sql)
+        sql = 'SELECT * FROM auth_group'
+        sql += ' WHERE id in (SELECT distinct group_id FROM auth_user_groups '
+        sql += ' WHERE user_id = ' + str(user_id) + ')'
+        my_project = pub_message.objects.raw(sql)
+        context['my_project'] = my_project
+
         return context
 
 def publish_byModelfrmView(request):
@@ -93,3 +109,11 @@ def edit(request, num):
         'goto_mypage_db': 'datashare:mypage_db',
     }
     return render(request, 'datashare/edit.html', params)
+
+
+class MyLoginView(LoginView):
+    form_class = LoginForm
+    template_name = 'datashare/login.html'
+
+class MyLogoutView(LogoutView):
+    template_name = 'datashare/logout.html'

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}{% endblock %}</title>
+    </head>
+    <body>
+        <h1>地理空間情報の共有サイト</h1>
+        {% if not.user.is_authenticated %}
+            <p>ログインしていません。</p>
+            <p><a href="{% url 'account:top' %}">TOP</a></p>
+        {% else %}
+            <p>ようこそ、{{ user.username }}さん。</p>
+            <p><a href="{% url 'account:logout' %}">ログアウト</a></p>
+        {% endif %}
+        {% block contents %}{% endblock %}
+    </body>
+</html>

@@ -1,6 +1,13 @@
 {% extends "datashare/base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block contents %}
+  <p>こんにちは、{{ user.username|safe }}さん</p>
+  <ul>
+    <li>所属プロジェクト</li>
+    {% for item in my_project %}
+      <li>{{ item.name }}</li>
+    {% endfor %}
+  </ul>
   <p>{{ msg|safe }}</p>
   <table border="1" style="border-collapse: collapse; border-color: #000000;">
     <tr>
@@ -23,5 +30,5 @@
     {% endfor %}
     </table>
     <p><a href="{% url goto_publish_db %}">投稿ページへ（DB接続）</a></p>
-    <p><a href="{% url goto_index %}">Indexへ戻る</a></p>
+    <p><a href="{% url goto_logout %}">Logout</a></p>
 {% endblock %}
