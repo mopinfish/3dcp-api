@@ -1,0 +1,16 @@
+{% extends 'datashare/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block contents %}
+    <h2>Login to My Page</h2>
+    <form action="" method="post">
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            {{ field }}
+            {{ field.errors }}
+            <br>
+        {% endfor %}
+        <button type="submit">Login</button>
+        <input type="hidden" name="next" value="{{ next }}">
+        {% csrf_token %}
+    </form>
+{% endblock %}
