@@ -3,7 +3,7 @@ envs:
 activate:
 	conda activate my_django_env
 run:
-	python manage.py runserver
+	DEBUG=1 python manage.py runserver
 migrate:
 	python manage.py migrate
 makemigrations:
