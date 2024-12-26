@@ -2,9 +2,12 @@
     "regions": [
         "hnd1"
     ],
+    "env": {
+        "PYTHONPATH": "/vercel/path0"
+    },
     "builds": [
         {
-            "src": "config/wsgi.py",
+            "src": "my_django/wsgi.py",
             "use": "@vercel/python",
             "config": {
                 "maxLambdaSize": "15mb",
@@ -26,7 +29,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "config/wsgi.py"
+            "dest": "my_django/wsgi.py"
         }
     ]
 }
