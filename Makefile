@@ -26,8 +26,3 @@ freeze:
 ## create superuser
 create_superuser:
 	python manage.py custom_createsuperuser
-
-## on vercel
-vercel_create_superuser:
-	vercel run python manage.py custom_createsuperuser
-
