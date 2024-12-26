@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 
 # プロジェクトのルートディレクトリを設定
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -82,6 +83,11 @@ WSGI_APPLICATION = 'my_django.wsgi.application'
 
 
 DATABASES = {}
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('POSTGRES_URL')
+    )
+}
 #DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.postgresql',
