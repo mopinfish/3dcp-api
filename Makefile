@@ -21,4 +21,5 @@ pg-ls-db:
 
 ## freeze to requirements.txt
 freeze:
-	pip freeze > requirements.txt
+	conda list --export > requirements.txt
+
