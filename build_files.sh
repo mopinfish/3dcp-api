@@ -1,9 +1,9 @@
-sudo apt-get update
-sudo apt-get install libgdal-dev
+apt-get update -y
+apt-get install libgdal-dev -y
 
-pip3 install GDAL
 gdalc-config --version
 which gdal-config
+pip3 install GDAL
 #export PATH=$PATH:/path/to/gdal-config/directory
 #export GDAL_CONFIG=/path/to/gdal-config
 #export GDAL_VERSION=3.2.0  # インストールされているバージョンに合わせて変更してください
