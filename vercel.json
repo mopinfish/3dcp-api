@@ -17,7 +17,7 @@
         },
         {
             "src": "build_files.sh",
-            "use": "@vercel/static-build",
+            "use": "vercel-python-gis@1.0.0",
             "config": {
               "distDir": "staticfiles_build"
             }
