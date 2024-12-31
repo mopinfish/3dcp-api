@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stations</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        function init() {
+            var map = L.map('mapcontainer', { zoomControl: false }).setView([{{latitude}}, {{longitude}}], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+            {% for station in stations %}
+                L.marker([{{ station.lat }}, {{ station.lon }}]).addTo(map)
+                    .bindPopup({{ station.na }});
+            {% endfor %}
+        }
+    </script>
+</head>
+<body onload="init()">
+    <div id="mapcontainer" style="width: 600px;height: 400px;"></div>
+    <h4>{{title}}</h4>
+</body>
+</html>

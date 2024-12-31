@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
+    'app_geodjango.apps.AppGeodjangoConfig',
     'my_django',
     'datashare',
     'account.apps.AccountConfig',
@@ -93,7 +95,8 @@ DB_PORT = os.environ.get('POSTGRES_PORT', '5432')
 DATABASE_URL = os.environ.get('POSTGRES_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 DATABASES = {
     'default': dj_database_url.config(
-        default=DATABASE_URL
+        default=DATABASE_URL,
+        engine='django.contrib.gis.db.backends.postgis',
     )
 }
 #DATABASES = {
