@@ -40,6 +40,8 @@ vercel-pg:
 ## Fly.io
 fly-ssh:
 	fly ssh console -C /bin/bash
+fly-shell:
+	fly ssh console -C "python manage.py shell"
 fly-proxy:
 	fly proxy 15432:5432 -a my-django-db
 fly-pg:
