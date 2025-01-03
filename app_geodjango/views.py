@@ -21,6 +21,7 @@ class StationView(TemplateView):
     def get(self, request):
         self.params['stations'] = stations.objects.filter(pref_cd=13)
         print('=-============')
+        print(self.params['stations'].query)
         print(len(self.params['stations']))
         print('=-============')
         return render(request, self.template_name, self.params)

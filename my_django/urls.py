@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('datashare/', include('datashare.urls')),
     path('account/', include('account.urls')),
-    path('app_geodjango/', include('app_geodjango.urls')),
+#    path('app_geodjango/', include('app_geodjango.urls')),
 ]
 
 if settings.DEBUG:
