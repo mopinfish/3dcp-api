@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+#DEBUG = True
 
 # ALLOWED_HOSTS = []を以下のようにして、vercel.appでも開けるようにする
 ALLOWED_HOSTS = [
@@ -92,7 +92,7 @@ DB_USER = os.environ.get('POSTGRES_USER', 'geobase')
 DB_PASS = os.environ.get('POSTGRES_PASS', 'geobase')
 DB_PORT = os.environ.get('POSTGRES_PORT', '5432')
 # DATABASE_URLを構築
-DATABASE_URL = os.environ.get('POSTGRES_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+DATABASE_URL = os.environ.get('DATABASE_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 DATABASES = {
     'default': dj_database_url.config(
         default=DATABASE_URL,
