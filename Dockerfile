@@ -37,7 +37,6 @@ RUN conda install -c conda-forge gdal
 
 COPY . /code
 
-ENV SECRET_KEY="MzfLZo4vgzkGfOu0yWXiayO0PXFBv9ntdZCNCpDbe3HTXcFu1x"
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
