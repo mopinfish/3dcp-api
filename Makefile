@@ -4,12 +4,16 @@ activate:
 	conda activate my_django_env
 run:
 	DEBUG=1 python manage.py runserver
+shell:
+	docker compose exec web python manage.py shell
+dbshell:
+	docker compose exec web python manage.py dbshell
 migrate:
-	python manage.py migrate
+	docker compose exec web python manage.py migrate
 migrate-zero:
-	python manage.py migrate app_geodjango zero
+	docker compose exec web python manage.py migrate app_geodjango zero
 makemigrations:
-	python manage.py makemigrations
+	docker compose exec web python manage.py makemigrations
 
 # temporary commands
 
@@ -32,3 +36,15 @@ create_superuser:
 ## verceldb
 vercel-pg:
 	psql -h ep-dark-dew-a1t73g9u-pooler.ap-southeast-1.aws.neon.tech -U geobase -d verceldb
+
+## Fly.io
+fly-ssh:
+	fly ssh console -C /bin/bash
+fly-proxy:
+	fly proxy 15432:5432 -a my-django-db
+fly-pg:
+	psql -h localhost -U geobase -d geobase -p 15432
+fly-deploy:
+	fly deploy
+fly-migrate:
+	fly ssh console -C "python manage.py migrate"
