@@ -18,12 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import IndexView
 
 urlpatterns = [
+    path('', IndexView.as_view(), name='index'),
     path('admin/', admin.site.urls),
     path('datashare/', include('datashare.urls')),
     path('account/', include('account.urls')),
-    path('app_geodjango/', include('app_geodjango.urls')),
+#    path('app_geodjango/', include('app_geodjango.urls')),
 ]
 
 if settings.DEBUG:

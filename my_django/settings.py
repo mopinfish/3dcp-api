@@ -92,7 +92,7 @@ DB_USER = os.environ.get('POSTGRES_USER', 'geobase')
 DB_PASS = os.environ.get('POSTGRES_PASS', 'geobase')
 DB_PORT = os.environ.get('POSTGRES_PORT', '5432')
 # DATABASE_URLを構築
-DATABASE_URL = os.environ.get('POSTGRES_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+DATABASE_URL = os.environ.get('DATABASE_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 DATABASES = {
     'default': dj_database_url.config(
         default=DATABASE_URL,
