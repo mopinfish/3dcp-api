@@ -1,6 +1,6 @@
-#ARG PYTHON_VERSION=3.12-slim
-#FROM python:${PYTHON_VERSION}
-FROM continuumio/miniconda3
+ARG PYTHON_VERSION=3.12-slim
+FROM python:${PYTHON_VERSION}
+#FROM continuumio/miniconda3
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -31,9 +31,9 @@ RUN set -ex && \
     rm -rf /root/.cache/
 
 # Install GDAL python bindings
-ENV GDAL_VERSION=3.7.3
-ENV GDAL_CONFIG=/usr/local/bin/gdal-config
-RUN conda install -c conda-forge gdal
+ENV GDAL_VERSION=3.6.2
+ENV GDAL_CONFIG=/usr/bin/gdal-config
+ENV GDAL_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/libgdal.so
 
 COPY . /code
 
