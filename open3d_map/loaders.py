@@ -4,7 +4,6 @@ from .models import CulturalProperty
 
 class CulturalPropertiesLoader:
     mapping = {
-        'id': 'id',
         'name': 'name',
         'name_kana': 'name_kana',
         'name_gener': 'name_gener',

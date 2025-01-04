@@ -2,7 +2,6 @@ from django.contrib.gis.db import models
 
 # Create your models here.
 class CulturalProperty(models.Model):
-    id = models.FloatField(primary_key=True)
     name = models.CharField(max_length=254)
     name_kana = models.CharField(max_length=254, null=True)
     name_gener = models.CharField(max_length=254, null=True)
