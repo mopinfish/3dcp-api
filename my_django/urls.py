@@ -34,7 +34,9 @@ urlpatterns = [
     path('datashare/', include('datashare.urls')),
     path('account/', include('account.urls')),
     path('app_geodjango/', include('app_geodjango.urls')),
+    path('open3d_map/', include('open3d_map.urls')),
     # Django REST framework API
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/v1/', include(router.urls)),
 ]
 
