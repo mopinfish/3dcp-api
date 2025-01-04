@@ -48,10 +48,12 @@ INSTALLED_APPS = [
     'my_django',
     'datashare',
     'account.apps.AccountConfig',
+    'open3d_map.apps.Open3DMapConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -110,12 +112,6 @@ DATABASES = {
     #}
 #}
 
-print('---------------------')
-print(DATABASES)
-print(DATABASE_URL)
-print('---------------------')
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -150,12 +146,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# 静的ファイルのビルドのためにSTATIC_ROOTを設定
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
-# 静的ファイルのビルドのためにSTATIC_ROOTを設定
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

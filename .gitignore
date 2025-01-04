@@ -3,3 +3,4 @@ __pycache__
 media/documents/*
 .vercel
 staticfiles_build/*
+staticfiles/*

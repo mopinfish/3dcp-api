@@ -27,11 +27,13 @@ pg-ls-db:
 
 ## freeze to requirements.txt
 freeze:
-	pip list --format=freeze > requirements.txt
+	docker compose exec web pip list --format=freeze > requirements.txt
 
 ## create superuser
-create_superuser:
-	python manage.py custom_createsuperuser
+exec_create_superuser:
+	docker compose exec web python manage.py custom_createsuperuser
+exec_create_sample_data:
+	docker compose exec web python manage.py create_sample_data
 
 ## verceldb
 vercel-pg:
