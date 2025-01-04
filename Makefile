@@ -27,7 +27,7 @@ pg-ls-db:
 
 ## freeze to requirements.txt
 freeze:
-	pip list --format=freeze > requirements.txt
+	docker compose exec web pip list --format=freeze > requirements.txt
 
 ## create superuser
 create_superuser:

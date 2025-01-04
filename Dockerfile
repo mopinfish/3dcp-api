@@ -37,7 +37,7 @@ RUN conda install -c conda-forge gdal
 
 COPY . /code
 
-RUN python manage.py collectstatic --link --noinput
+RUN python manage.py collectstatic
 
 EXPOSE 8000
 

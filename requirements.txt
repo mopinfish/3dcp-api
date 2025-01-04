@@ -24,6 +24,7 @@ djangorestframework==3.15.2
 executing==2.1.0
 filelock==3.15.4
 frozendict==2.4.2
+GDAL==3.6.2
 gunicorn==23.0.0
 idna==3.7
 ipython==8.30.0
@@ -69,4 +70,5 @@ urllib3==2.2.3
 virtualenv==20.26.3
 wcwidth==0.2.13
 wheel==0.44.0
+whitenoise==6.8.2
 zstandard==0.23.0
