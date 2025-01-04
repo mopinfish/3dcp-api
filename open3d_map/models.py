@@ -15,3 +15,14 @@ class CulturalProperty(models.Model):
     url = models.CharField(max_length=254, null=True)
     note = models.CharField(max_length=254, null=True)
     geom = models.PointField(srid=6668)
+
+class Movie(models.Model):
+    class Meta:
+        db_table = 'movies'
+        verbose_name = 'Movie'
+        verbose_name_plural = 'Movies'
+
+    cultural_property = models.ForeignKey(CulturalProperty, on_delete=models.CASCADE)
+    url = models.CharField(max_length=254)
+    title = models.CharField(max_length=254, null=True)
+    note = models.CharField(max_length=254, null=True)

@@ -18,7 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+
 from .views import IndexView
+from open3d_map.views import CulturalPropertyViewSet, MovieViewSet
+from rest_framework import routers
+
+# Django REST framework API router
+router = routers.SimpleRouter()
+router.register(r'movies', MovieViewSet)
+router.register(r'cultural_properties', CulturalPropertyViewSet)
 
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
@@ -26,6 +34,8 @@ urlpatterns = [
     path('datashare/', include('datashare.urls')),
     path('account/', include('account.urls')),
     path('app_geodjango/', include('app_geodjango.urls')),
+    # Django REST framework API
+    path('api/v1/', include(router.urls)),
 ]
 
 if settings.DEBUG:
