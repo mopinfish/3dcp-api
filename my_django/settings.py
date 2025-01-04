@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'my_django',
     'datashare',
     'account.apps.AccountConfig',
+    'open3d_map.apps.Open3DMapConfig',
 ]
 
 MIDDLEWARE = [
