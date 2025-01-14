@@ -30,12 +30,16 @@ SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz
 # ALLOWED_HOSTS = []を以下のようにして、vercel.appでも開けるようにする
 ALLOWED_HOSTS = [
     '*',
-    '.vercel.app'
+    '.vercel.app',
 ]
 
+# CORSの設定
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
+    'corsheaders',
     'rest_framework',
     'app_geodjango.apps.AppGeodjangoConfig',
     'my_django',
@@ -56,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
