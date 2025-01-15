@@ -50,11 +50,12 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'corsheaders',
     'rest_framework',
+    'django_filters',
     'app_geodjango.apps.AppGeodjangoConfig',
     'my_django',
     'datashare',
+    'open3d_map',
     'account.apps.AccountConfig',
-    'open3d_map.apps.Open3DMapConfig',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100,
+}
 
 ROOT_URLCONF = 'my_django.urls'
 

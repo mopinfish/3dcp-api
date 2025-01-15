@@ -3,7 +3,7 @@ envs:
 activate:
 	conda activate my_django_env
 run:
-	DEBUG=1 python manage.py runserver
+	DEBUG=1 python manage.py runserver 0.0.0.0:8000
 shell:
 	docker compose exec web python manage.py shell
 dbshell:
