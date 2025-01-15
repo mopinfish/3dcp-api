@@ -27,15 +27,18 @@ SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
 
-# ALLOWED_HOSTS = []を以下のようにして、vercel.appでも開けるようにする
+# ALLOWED_HOSTS = []を以下のようにして、fly.dev, vercel.appでも開けるようにする
 ALLOWED_HOSTS = [
-    '*',
+    'localhost',
+    '.fly.dev', 
     '.vercel.app',
 ]
 
 # CORSの設定
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://my-mapnext-map-git-main-mopinfish.vercel.app",
+    "https://my-mapnext-map-git-develop-mopinfish.vercel.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
