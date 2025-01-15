@@ -39,6 +39,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev/']
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -98,7 +100,7 @@ WSGI_APPLICATION = 'my_django.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databasesLLOQ
 
 
 # 環境変数からデータベース接続情報を取得
