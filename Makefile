@@ -44,6 +44,8 @@ fly-ssh:
 	fly ssh console -C /bin/bash
 fly-shell:
 	fly ssh console -C "python manage.py shell"
+fly-logs:
+	fly logs -a my-django
 fly-proxy:
 	fly proxy 15432:5432 -a my-django-db
 fly-pg:
