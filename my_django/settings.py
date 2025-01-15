@@ -53,8 +53,8 @@ INSTALLED_APPS = [
     'app_geodjango.apps.AppGeodjangoConfig',
     'my_django',
     'datashare',
+    'open3d_map',
     'account.apps.AccountConfig',
-    'open3d_map.apps.Open3DMapConfig',
 ]
 
 MIDDLEWARE = [
