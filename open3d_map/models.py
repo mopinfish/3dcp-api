@@ -4,11 +4,11 @@ from django.contrib.gis.db import models
 class CulturalProperty(models.Model):
     name = models.CharField(max_length=254)
     name_kana = models.CharField(max_length=254, null=True)
-    name_gener = models.CharField(max_length=254, null=True)
+    name_gener = models.CharField(max_length=254, null=True, blank=True)
     name_en = models.CharField(max_length=254, null=True)
     category = models.CharField(max_length=254)
     type = models.CharField(max_length=254)
-    place_name = models.CharField(max_length=254, null=True)
+    place_name = models.CharField(max_length=254, null=True, blank=True)
     address = models.CharField(max_length=254)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
@@ -22,7 +22,7 @@ class Movie(models.Model):
         verbose_name = 'Movie'
         verbose_name_plural = 'Movies'
 
-    cultural_property = models.ForeignKey(CulturalProperty, on_delete=models.CASCADE)
     url = models.CharField(max_length=254)
     title = models.CharField(max_length=254, null=True)
     note = models.CharField(max_length=254, null=True)
+    cultural_property = models.ForeignKey(CulturalProperty, related_name='movies', on_delete=models.CASCADE, null=True)
