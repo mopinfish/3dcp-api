@@ -186,7 +186,3 @@ else:
 
 LOGIN_URL = 'datashare:login'
 LOGIN_REDIRECT_URL = 'datashare:mypage_db'
-
-print('--------------------------------------')
-print(MEDIA_ROOT)
-print('--------------------------------------')
