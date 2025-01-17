@@ -13,7 +13,7 @@ class CulturalProperty(models.Model):
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     url = models.CharField(max_length=254, null=True)
-    note = models.CharField(max_length=254, null=True)
+    note = models.CharField(max_length=4094, null=True)
     geom = models.PointField(srid=6668)
 
 class Movie(models.Model):
