@@ -15,6 +15,7 @@ RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # install psycopg2 dependencies.
 RUN apt-get update && apt-get install -y  --fix-missing \
+    nginx \
     libpq-dev \
     build-essential \
     && apt-get install -y --no-install-recommends gdal-bin libgdal-dev
@@ -25,6 +26,9 @@ ENV C_INCLUDE_PATH=/usr/include/gdal
 
 RUN mkdir -p /code
 WORKDIR /code
+
+# Nginx設定をコピー
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 
 COPY requirements.txt /tmp/requirements.txt
 RUN set -ex && \
@@ -41,6 +45,8 @@ COPY . /code
 
 RUN python manage.py collectstatic --noinput
 
+EXPOSE 8080
 EXPOSE 8000
 
-CMD ["gunicorn","--bind",":8000","--workers","2","my_django.wsgi"]
+# NginxとDjangoを起動するスクリプトを用意
+CMD service nginx start && gunicorn my_django.wsgi:application --bind 0.0.0.0:8000

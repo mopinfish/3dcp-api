@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-2&m(0d%dq65ns_h2tkz-yc2z^r%82mj$+-1u1t7)@ly3+!$1cz'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = True
+DEBUG = os.environ.get('DEBUG', '1') == '1'
 
 # ALLOWED_HOSTS = []を以下のようにして、fly.dev, vercel.appでも開けるようにする
 ALLOWED_HOSTS = [
@@ -178,7 +178,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+if DEBUG:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+else:
+    MEDIA_ROOT = '/mnt/images'
+
 
 LOGIN_URL = 'datashare:login'
 LOGIN_REDIRECT_URL = 'datashare:mypage_db'
