@@ -14,7 +14,7 @@ class CulturalPropertyFilter(filters.FilterSet):
         fields = ['name', 'name_en', 'has_movies']
 
 class CulturalPropertyViewSet(viewsets.ModelViewSet):
-    queryset = CulturalProperty.objects.all().prefetch_related('movies')
+    queryset = CulturalProperty.objects.all().prefetch_related('movies').prefetch_related('images')
     serializer_class = CulturalPropertySerializer
     filterset_class = CulturalPropertyFilter
     filterset_fields = ['name', 'name_en', 'movies']

@@ -1,4 +1,6 @@
+import os
 from django.contrib.gis.db import models
+from django.conf import settings
 
 # Create your models here.
 class CulturalProperty(models.Model):
@@ -26,3 +28,11 @@ class Movie(models.Model):
     title = models.CharField(max_length=254, null=True)
     note = models.CharField(max_length=254, null=True)
     cultural_property = models.ForeignKey(CulturalProperty, related_name='movies', on_delete=models.CASCADE, null=True)
+
+def upload_to(instance, filename):
+    return os.path.join('images', filename)
+
+class ImageUpload(models.Model):
+    media_path = settings.MEDIA_ROOT
+    image = models.ImageField(upload_to=upload_to)
+    cultural_property = models.ForeignKey(CulturalProperty, related_name='images', on_delete=models.CASCADE, null=True)
