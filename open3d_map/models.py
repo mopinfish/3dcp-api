@@ -27,7 +27,7 @@ class Movie(models.Model):
     url = models.CharField(max_length=254)
     title = models.CharField(max_length=254, null=True)
     note = models.CharField(max_length=254, null=True)
-    cultural_property = models.ForeignKey(CulturalProperty, related_name='movies', on_delete=models.CASCADE, null=True)
+    cultural_property = models.ForeignKey(CulturalProperty, related_name='movies', on_delete=models.DO_NOTHING, null=True, blank=True)
 
 def upload_to(instance, filename):
     return os.path.join('images', filename)
