@@ -8,7 +8,7 @@ class CulturalProperty(models.Model):
     name_kana = models.CharField(max_length=254, null=True)
     name_gener = models.CharField(max_length=254, null=True, blank=True)
     name_en = models.CharField(max_length=254, null=True)
-    category = models.CharField(max_length=254)
+    category = models.CharField(max_length=254, null=True, blank=True)
     type = models.CharField(max_length=254)
     place_name = models.CharField(max_length=254, null=True, blank=True)
     address = models.CharField(max_length=254)
