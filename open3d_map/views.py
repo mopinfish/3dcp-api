@@ -5,7 +5,7 @@ from .serializers import MovieSerializer, CulturalPropertySerializer, TagSeriali
 from .filters import CulturalPropertyFilter
 
 class CulturalPropertyViewSet(viewsets.ModelViewSet):
-    queryset = CulturalProperty.objects.all().prefetch_related('movies').prefetch_related('images')
+    queryset = CulturalProperty.objects.all().prefetch_related('movies').prefetch_related('images').prefetch_related('tags')
     serializer_class = CulturalPropertySerializer
     filterset_class = CulturalPropertyFilter
     filterset_fields = ['name', 'name_en', 'movies']
