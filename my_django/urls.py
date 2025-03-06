@@ -20,13 +20,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from .views import IndexView
-from open3d_map.views import CulturalPropertyViewSet, MovieViewSet
+from open3d_map.views import CulturalPropertyViewSet, MovieViewSet, TagViewSet
 from rest_framework import routers
 
 # Django REST framework API router
 router = routers.SimpleRouter()
 router.register(r'movies', MovieViewSet)
 router.register(r'cultural_properties', CulturalPropertyViewSet)
+router.register(r'tags', TagViewSet)
 
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
