@@ -1,17 +1,8 @@
 from rest_framework import viewsets
-from django_filters import rest_framework as filters 
 
 from .models import Movie, CulturalProperty
 from .serializers import MovieSerializer, CulturalPropertySerializer
-
-class CulturalPropertyFilter(filters.FilterSet):
-    name = filters.CharFilter(lookup_expr='icontains')
-    name_en = filters.CharFilter(lookup_expr='icontains')
-    has_movies = filters.BooleanFilter(field_name='movies', lookup_expr='isnull', exclude=True)
-
-    class Meta:
-        model = CulturalProperty
-        fields = ['name', 'name_en', 'has_movies']
+from .filters import CulturalPropertyFilter
 
 class CulturalPropertyViewSet(viewsets.ModelViewSet):
     queryset = CulturalProperty.objects.all().prefetch_related('movies').prefetch_related('images')

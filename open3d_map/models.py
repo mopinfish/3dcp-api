@@ -1,8 +1,15 @@
-import os
-from django.contrib.gis.db import models
-from django.conf import settings
 
-# Create your models here.
+import os
+from django.conf import settings
+from django.contrib.gis.db import models
+
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # タグ名
+    description = models.TextField(null=True, blank=True)  # タグの説明
+
+    def __str__(self):
+        return self.name
+
 class CulturalProperty(models.Model):
     name = models.CharField(max_length=254)
     name_kana = models.CharField(max_length=254, null=True)
@@ -14,9 +21,14 @@ class CulturalProperty(models.Model):
     address = models.CharField(max_length=254)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
-    url = models.CharField(max_length=254, null=True)
-    note = models.CharField(max_length=4094, null=True)
+    url = models.CharField(max_length=254, null=True, blank=True)
+    note = models.CharField(max_length=4094, null=True, blank=True)
     geom = models.PointField(srid=6668)
+
+    tags = models.ManyToManyField(Tag, related_name='cultural_properties', blank=True)  # タグとのリレーション
+
+    def __str__(self):
+        return self.name
 
 class Movie(models.Model):
     class Meta:
