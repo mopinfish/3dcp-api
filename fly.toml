@@ -24,12 +24,6 @@ console_command = '/code/manage.py shell'
   min_machines_running = 0
   processes = ['app']
 
-  [http_service.headers]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, OPTIONS"
-    Access-Control-Allow-Headers = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
-    Access-Control-Expose-Headers = "Content-Length,Content-Range"
-
 [mounts]
   source = "my_volume"
   destination = "/mnt/images"

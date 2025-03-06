@@ -41,6 +41,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://my-mapnext-map-git-main-mopinfish.vercel.app",
     "https://my-mapnext-map-git-develop-mopinfish.vercel.app",
 ]
+
+# 認証情報付きのリクエストを許可する場合（必要に応じて）
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev']
