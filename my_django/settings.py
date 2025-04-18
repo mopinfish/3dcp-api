@@ -38,6 +38,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://open3dmap.geofirm.info",
+    "https://3dcp.geofirm.info",
     "https://my-mapnext-map-git-main-mopinfish.vercel.app",
     "https://my-mapnext-map-git-develop-mopinfish.vercel.app",
 ]
