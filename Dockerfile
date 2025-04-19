@@ -47,4 +47,4 @@ EXPOSE 8080
 EXPOSE 8000
 
 # NginxとDjangoを起動するスクリプトを用意
-CMD service nginx start && gunicorn my_django.wsgi:application --bind 0.0.0.0:8000
+CMD service nginx start && gunicorn core.wsgi:application --bind 0.0.0.0:8000

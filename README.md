@@ -1,3 +1,3 @@
-# my-django
+# 3dcp-api
 
 ##

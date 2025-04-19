@@ -1,9 +1,5 @@
-envs:
-	conda info --envs
-activate:
-	conda activate my_django_env
-run:
-	DEBUG=1 python manage.py runserver 0.0.0.0:8000
+up:
+	docker compose up -d
 shell:
 	docker compose exec web python manage.py shell
 dbshell:
@@ -35,17 +31,13 @@ exec_create_superuser:
 exec_create_sample_data:
 	docker compose exec web python manage.py create_sample_data
 
-## verceldb
-vercel-pg:
-	psql -h ep-dark-dew-a1t73g9u-pooler.ap-southeast-1.aws.neon.tech -U geobase -d verceldb
-
 ## Fly.io
 fly-ssh:
 	fly ssh console -C /bin/bash
 fly-shell:
 	fly ssh console -C "python manage.py shell"
 fly-logs:
-	fly logs -a my-django
+	fly logs -a 3dcp-api
 fly-access-logs:
 	fly ssh console -C "tail -f /var/log/nginx/media_access.log"
 fly-proxy:
