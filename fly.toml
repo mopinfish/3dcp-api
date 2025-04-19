@@ -1,39 +1,38 @@
-# fly.toml app configuration file generated for my-django on 2025-01-03T10:43:34+09:00
+# fly.toml app configuration file generated for 3dcp-api on 2025-04-19T19:43:40+09:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'my-django'
-primary_region = 'sin'
+app = '3dcp-api'
+primary_region = 'nrt'
 console_command = '/code/manage.py shell'
 
 [build]
 
 [deploy]
-  release_command = 'python manage.py migrate'
+  release_command = 'python manage.py migrate --noinput'
 
 [env]
-  PORT = '8080'
+  PORT = '8000'
   TZ = 'Asia/Tokyo'
 
+[[mounts]]
+  source = '3dcp_volume'
+  destination = '/mnt/images'
+
 [http_service]
-  internal_port = 8080
+  internal_port = 8000
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
 
-[mounts]
-  source = "my_volume"
-  destination = "/mnt/images"
-
 [[vm]]
-  memory = '2gb'
+  memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
 
 [[statics]]
   guest_path = '/code/static'
   url_prefix = '/static/'
-

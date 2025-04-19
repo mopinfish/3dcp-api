@@ -5,4 +5,4 @@ media/images/*
 .vercel
 staticfiles_build/*
 staticfiles/*
-
+postgis/*

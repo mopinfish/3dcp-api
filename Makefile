@@ -15,11 +15,11 @@ makemigrations:
 
 ## connect database
 pg:
-	docker compose exec postgis psql -U geobase
+	docker compose exec postgis psql -U 3dcp
 
 ## list databases
 pg-ls-db:
-	docker compose exec postgis psql -U geobase -c "\l"
+	docker compose exec postgis psql -U 3dcp -c "\l"
 
 ## freeze to requirements.txt
 freeze:
@@ -41,9 +41,9 @@ fly-logs:
 fly-access-logs:
 	fly ssh console -C "tail -f /var/log/nginx/media_access.log"
 fly-proxy:
-	fly proxy 15432:5432 -a my-django-db
+	fly proxy 15432:5432 -a 3dcp-api-db
 fly-pg:
-	psql -h localhost -U geobase -d geobase -p 15432
+	psql -h localhost -U three_cp -d three_cp -p 15432
 fly-deploy:
 	fly deploy
 fly-migrate:

@@ -46,7 +46,7 @@ CORS_ALLOWED_ORIGINS = [
 # 認証情報付きのリクエストを許可する場合（必要に応じて）
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev']
+CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev', 'https://3dcp-api.fly.dev']
 
 # Application definition
 INSTALLED_APPS = [
