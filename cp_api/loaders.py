@@ -35,3 +35,6 @@ class CulturalPropertiesLoader:
 
 class TaitoCulturalPropertiesLoader(CulturalPropertiesLoader):
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'cultural_properties_taito.shp'))
+
+class MinatoCulturalPropertiesLoader(CulturalPropertiesLoader):
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', 'cultural_properties_minato.shp'))

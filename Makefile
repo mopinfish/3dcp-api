@@ -1,15 +1,15 @@
 up:
 	docker compose up -d
 shell:
-	docker compose exec web python manage.py shell
+	docker compose exec api python manage.py shell
 dbshell:
-	docker compose exec web python manage.py dbshell
+	docker compose exec api python manage.py dbshell
 migrate:
-	docker compose exec web python manage.py migrate
+	docker compose exec api python manage.py migrate
 migrate-zero:
-	docker compose exec web python manage.py migrate app_geodjango zero
+	docker compose exec api python manage.py migrate app_geodjango zero
 makemigrations:
-	docker compose exec web python manage.py makemigrations
+	docker compose exec api python manage.py makemigrations
 
 # temporary commands
 
@@ -23,13 +23,13 @@ pg-ls-db:
 
 ## freeze to requirements.txt
 freeze:
-	docker compose exec web pip list --format=freeze > requirements.txt
+	docker compose exec api pip list --format=freeze > requirements.txt
 
 ## create superuser
 exec_create_superuser:
-	docker compose exec web python manage.py custom_createsuperuser
+	docker compose exec api python manage.py custom_createsuperuser
 exec_create_sample_data:
-	docker compose exec web python manage.py create_sample_data
+	docker compose exec api python manage.py create_sample_data
 
 ## Fly.io
 fly-ssh:

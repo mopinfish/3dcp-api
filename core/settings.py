@@ -110,9 +110,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # 環境変数からデータベース接続情報を取得
 DB_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
-DB_NAME = os.environ.get('POSTGRES_DATABASE', 'geobase')
-DB_USER = os.environ.get('POSTGRES_USER', 'geobase')
-DB_PASS = os.environ.get('POSTGRES_PASS', 'geobase')
+DB_NAME = os.environ.get('POSTGRES_DATABASE', '3dcp')
+DB_USER = os.environ.get('POSTGRES_USER', '3dcp')
+DB_PASS = os.environ.get('POSTGRES_PASS', '3dcp')
 DB_PORT = os.environ.get('POSTGRES_PORT', '5432')
 # DATABASE_URLを構築
 DATABASE_URL = os.environ.get('DATABASE_URL', f"postgres://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?currentSchema=public")
