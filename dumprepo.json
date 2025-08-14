@@ -1,0 +1,11 @@
+{
+  "projectStructure": {
+    "include": ["**/*"],
+    "exclude": ["node_modules/**", "dumprepo.json", "postgis/**", "data/**", "cp_api/data/**"]
+  },
+  "textFiles": {
+    "include": ["**/*"],
+    "exclude": ["node_modules/**", "dumprepo.json", "*.svg", "*.png",  "*.jpg", "package-lock.json", "postgis/**", "data/**", "cp_api/data/**"]
+  },
+  "dot": false
+}
