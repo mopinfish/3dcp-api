@@ -97,6 +97,7 @@ class SignUpSerializer(serializers.ModelSerializer):
 class SignInSerializer(serializers.Serializer):
     """
     サインイン用のシリアライザー
+    メールアドレスまたはユーザー名の両方でログイン可能
     """
     username = serializers.CharField(required=True)
     password = serializers.CharField(
@@ -108,24 +109,41 @@ class SignInSerializer(serializers.Serializer):
     def validate(self, data):
         """
         認証チェック
+        メールアドレスまたはユーザー名のどちらでもログイン可能
         """
-        username = data.get('username')
+        username_or_email = data.get('username')
         password = data.get('password')
 
-        if username and password:
-            user = authenticate(username=username, password=password)
+        if username_or_email and password:
+            # まずユーザー名で認証を試みる
+            user = authenticate(username=username_or_email, password=password)
+            
+            # ユーザー名での認証が失敗した場合、メールアドレスで再試行
+            if not user:
+                try:
+                    # メールアドレスでユーザーを検索
+                    user_obj = User.objects.get(email=username_or_email)
+                    # ユーザー名を使って認証
+                    user = authenticate(username=user_obj.username, password=password)
+                except User.DoesNotExist:
+                    pass
+            
+            # 認証に失敗した場合
             if not user:
                 raise serializers.ValidationError(
-                    'ユーザー名またはパスワードが正しくありません。'
+                    'ユーザー名/メールアドレスまたはパスワードが正しくありません。'
                 )
+            
+            # アカウントが無効化されている場合
             if not user.is_active:
                 raise serializers.ValidationError(
                     'このアカウントは無効化されています。'
                 )
+            
             data['user'] = user
         else:
             raise serializers.ValidationError(
-                'ユーザー名とパスワードは必須です。'
+                'ユーザー名/メールアドレスとパスワードは必須です。'
             )
         
         return data

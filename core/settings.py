@@ -47,7 +47,13 @@ CORS_ALLOWED_ORIGINS = [
 # 認証情報付きのリクエストを許可する場合（必要に応じて）
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev', 'https://3dcp-api.fly.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://my-django.fly.dev',
+    'https://3dcp-api.fly.dev',
+    'https://3dcp.geofirm.info'
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -72,6 +78,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.DisableCSRFForAPIMiddleware',  # ← 追加
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

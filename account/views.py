@@ -24,6 +24,9 @@ from .forms import LoginForm
 
 User = get_user_model()
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 # ==========================================
 # 既存のテンプレートビュー (Django Template用)
@@ -110,13 +113,29 @@ class SignInAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # デバッグ用ログ出力
+        logger.info("=" * 50)
+        logger.info("SignIn Request Received")
+        logger.info(f"Request Data: {request.data}")
+        logger.info(f"Request Content-Type: {request.content_type}")
+        logger.info(f"Request Headers: {dict(request.headers)}")
+        logger.info("=" * 50)
+        
         serializer = SignInSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            logger.error(f"Serializer Validation Error: {e}")
+            logger.error(f"Serializer Errors: {serializer.errors}")
+            raise
         
         user = serializer.validated_data['user']
         
         # トークン認証を使用する場合
         token, created = Token.objects.get_or_create(user=user)
+        
+        logger.info(f"User {user.username} logged in successfully")
         
         return Response({
             'message': 'ログインに成功しました。',
@@ -167,18 +186,17 @@ class EmailVerificationAPIView(APIView):
             
             if user.verify_email(token):
                 return Response({
-                    'message': 'メールアドレスの認証が完了しました。',
-                    'user': UserSerializer(user).data
+                    'message': 'メールアドレスの認証が完了しました。'
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'error': '認証トークンが無効または期限切れです。'
+                    'error': '認証トークンの有効期限が切れています。再度登録してください。'
                 }, status=status.HTTP_400_BAD_REQUEST)
-        
+                
         except User.DoesNotExist:
             return Response({
                 'error': '無効な認証トークンです。'
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResendVerificationEmailAPIView(APIView):
@@ -205,19 +223,19 @@ class ResendVerificationEmailAPIView(APIView):
                 }, status=status.HTTP_200_OK)
             
             # 新しいトークンを生成
-            verification_token = user.generate_verification_token()
+            user.generate_verification_token()
             
-            # メールを再送信
-            self.send_verification_email(user, verification_token)
+            # 認証メールを再送信
+            self.send_verification_email(user, user.email_verification_token)
             
             return Response({
                 'message': '認証メールを再送信しました。'
             }, status=status.HTTP_200_OK)
-        
+            
         except User.DoesNotExist:
             return Response({
                 'error': 'このメールアドレスは登録されていません。'
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_400_BAD_REQUEST)
     
     def send_verification_email(self, user, token):
         """
@@ -225,7 +243,7 @@ class ResendVerificationEmailAPIView(APIView):
         """
         verification_url = f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
         
-        subject = '【3DCP】メールアドレスの認証（再送）'
+        subject = '【3DCP】メールアドレスの認証(再送)'
         message = f"""
 {user.username} 様
 
