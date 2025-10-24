@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
 # CORSの設定
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://open3dmap.geofirm.info",
     "https://3dcp.geofirm.info",
     "https://my-mapnext-map-git-main-mopinfish.vercel.app",
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'core',
     'cp_api',
@@ -77,7 +79,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# REST Framework設定
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
