@@ -136,6 +136,31 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
+# カスタムユーザーモデルの設定
+AUTH_USER_MODEL = 'account.User'
+
+# メール設定(開発環境用)
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# 本番環境では以下のような設定を使用
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+# 共通設定
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'mopinfish@gmail.com')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# メール認証トークンの有効期限(秒)
+EMAIL_VERIFICATION_TOKEN_EXPIRE_SECONDS = 86400  # 24時間
+
+# フロントエンドのURL(メール認証リンク用)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
