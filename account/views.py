@@ -171,32 +171,64 @@ class EmailVerificationAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # デバッグログ
+        logger.info("=" * 50)
+        logger.info("Email Verification Request Received")
+        logger.info(f"Request Data: {request.data}")
+        logger.info("=" * 50)
+        
         serializer = EmailVerificationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            logger.error(f"Serializer Validation Error: {e}")
+            logger.error(f"Serializer Errors: {serializer.errors}")
+            return Response({
+                'error': 'トークンの形式が正しくありません。'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         token = serializer.validated_data['token']
+        # UUIDオブジェクトを文字列に変換してからスライス
+        token_str = str(token)
+        logger.info(f"Token received: {token_str[:10]}...")
         
         try:
             user = User.objects.get(email_verification_token=token)
+            logger.info(f"User found: {user.username}, email: {user.email}")
+            logger.info(f"Is already verified: {user.is_email_verified}")
             
             if user.is_email_verified:
+                logger.info("User is already verified")
                 return Response({
                     'message': 'このメールアドレスは既に認証済みです。'
                 }, status=status.HTTP_200_OK)
             
+            # トークンの有効期限チェック
+            logger.info(f"Token created at: {user.email_verification_token_created_at}")
+            
             if user.verify_email(token):
+                logger.info("Email verification successful")
                 return Response({
                     'message': 'メールアドレスの認証が完了しました。'
                 }, status=status.HTTP_200_OK)
             else:
+                logger.warning("Token expired")
                 return Response({
                     'error': '認証トークンの有効期限が切れています。再度登録してください。'
                 }, status=status.HTTP_400_BAD_REQUEST)
                 
         except User.DoesNotExist:
+            logger.error(f"User with token not found: {token_str[:10]}...")
             return Response({
                 'error': '無効な認証トークンです。'
             }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Unexpected error during email verification: {e}")
+            logger.exception("Full traceback:")  # スタックトレース全体をログ出力
+            return Response({
+                'error': 'サーバーエラーが発生しました。'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ResendVerificationEmailAPIView(APIView):
@@ -291,22 +323,15 @@ class PasswordChangeAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        serializer = PasswordChangeSerializer(
-            data=request.data,
-            context={'request': request}
-        )
+        serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         
         user = request.user
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         
-        # パスワード変更後、既存のトークンを削除して新しいトークンを発行
-        try:
-            request.user.auth_token.delete()
-        except Token.DoesNotExist:
-            pass
-        
+        # パスワード変更後、新しいトークンを生成
+        Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
         
         return Response({
@@ -317,13 +342,13 @@ class PasswordChangeAPIView(APIView):
 
 class CheckAuthAPIView(APIView):
     """
-    認証状態確認API
+    認証チェックAPI
     GET /api/v1/auth/check/
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        return Response({
-            'authenticated': True,
-            'user': UserSerializer(request.user).data
-        }, status=status.HTTP_200_OK)
+        return Response(
+            UserSerializer(request.user).data,
+            status=status.HTTP_200_OK
+        )
