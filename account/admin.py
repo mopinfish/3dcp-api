@@ -96,7 +96,7 @@ class UserAdmin(BaseUserAdmin):
         """
         if obj.is_email_verified:
             return format_html(
-                '<span style="background-color: #28a745; color: white; padding: 3px 10px; border-radius: 3px;">認証済み</span>'
+                '<span style="background-color: #28a745; color: #000; padding: 3px 10px; border-radius: 3px;">認証済み</span>'
             )
         else:
             return format_html(
