@@ -155,7 +155,7 @@ class SignOutAPIView(APIView):
         # トークンを削除
         try:
             request.user.auth_token.delete()
-        except:
+        except Token.DoesNotExist:
             pass
         
         return Response({
