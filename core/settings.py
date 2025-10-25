@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
 # CORSの設定
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://open3dmap.geofirm.info",
     "https://3dcp.geofirm.info",
     "https://my-mapnext-map-git-main-mopinfish.vercel.app",
@@ -46,7 +47,13 @@ CORS_ALLOWED_ORIGINS = [
 # 認証情報付きのリクエストを許可する場合（必要に応じて）
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://my-django.fly.dev', 'https://3dcp-api.fly.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://my-django.fly.dev',
+    'https://3dcp-api.fly.dev',
+    'https://3dcp.geofirm.info'
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -59,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'core',
     'cp_api',
@@ -70,6 +78,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.DisableCSRFForAPIMiddleware',  # ← 追加
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -77,7 +86,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# REST Framework設定
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
@@ -135,6 +152,31 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
+# カスタムユーザーモデルの設定
+AUTH_USER_MODEL = 'account.User'
+
+# メール設定(開発環境用)
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# 本番環境では以下のような設定を使用
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+# 共通設定
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'mopinfish@gmail.com')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# メール認証トークンの有効期限(秒)
+EMAIL_VERIFICATION_TOKEN_EXPIRE_SECONDS = 86400  # 24時間
+
+# フロントエンドのURL(メール認証リンク用)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 AUTH_PASSWORD_VALIDATORS = [
     {

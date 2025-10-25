@@ -1,19 +1,3 @@
-"""
-URL configuration for cp project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from core import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -32,11 +16,17 @@ router.register(r'tags', TagViewSet)
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
     path('admin/', admin.site.urls),
-    path('account/', include('account.urls')),
+    
+    # Django Template用 (accountアプリ)
+    path('account/', include('account.urls', namespace='account')),
+    
+    # REST API用
     path('cp_api/', include('cp_api.urls')),
-    # Django REST framework API
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/v1/', include(router.urls)),
+    
+    # 認証API (namespace を auth に変更)
+    path('api/v1/auth/', include(('account.urls', 'account'), namespace='auth')),
 ]
 
 if settings.DEBUG:

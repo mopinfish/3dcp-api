@@ -48,3 +48,7 @@ fly-deploy:
 	fly deploy
 fly-migrate:
 	fly ssh console -C "python manage.py migrate"
+
+# Tests
+test_email:
+	docker compose exec -e DEBUG=1 api python manage.py test_email mopinfish@gmail.com
