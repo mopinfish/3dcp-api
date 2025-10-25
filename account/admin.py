@@ -100,7 +100,7 @@ class UserAdmin(BaseUserAdmin):
             )
         else:
             return format_html(
-                '<span style="background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 3px;">未認証</span>'
+                '<span style="background-color: #dc3545; color: #000; padding: 3px 10px; border-radius: 3px;">未認証</span>'
             )
     
     is_email_verified_badge.short_description = 'メール認証'
