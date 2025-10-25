@@ -391,7 +391,50 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
-
+    
+    def update(self, request, *args, **kwargs):
+        """
+        プロフィール更新（PUT/PATCH）
+        デバッグログを追加
+        """
+        logger.info("=" * 80)
+        logger.info("📝 Profile Update Request")
+        logger.info(f"  Method: {request.method}")
+        logger.info(f"  User: {request.user.username}")
+        logger.info(f"  Data: {request.data}")
+        logger.info(f"  Files: {request.FILES}")
+        logger.info(f"  Content-Type: {request.content_type}")
+        logger.info("=" * 80)
+        
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            logger.error("=" * 80)
+            logger.error("❌ Serializer Validation Error")
+            logger.error(f"  Errors: {serializer.errors}")
+            logger.error(f"  Exception: {str(e)}")
+            logger.error("=" * 80)
+            raise
+        
+        self.perform_update(serializer)
+        
+        logger.info("=" * 80)
+        logger.info("✅ Profile Update Successful")
+        logger.info(f"  Updated fields: {list(request.data.keys())}")
+        logger.info("=" * 80)
+        
+        return Response(serializer.data)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """
+        部分更新（PATCH）
+        """
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 class PasswordChangeAPIView(APIView):
     """
