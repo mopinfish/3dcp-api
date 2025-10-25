@@ -304,7 +304,7 @@ class PasswordChangeAPIView(APIView):
         # パスワード変更後、既存のトークンを削除して新しいトークンを発行
         try:
             request.user.auth_token.delete()
-        except:
+        except Token.DoesNotExist:
             pass
         
         token = Token.objects.create(user=user)
