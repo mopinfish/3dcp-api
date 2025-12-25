@@ -2,6 +2,7 @@ __pycache__
 .env
 media/documents/*
 media/images/*
+media/avatars/*
 .vercel
 staticfiles_build/*
 staticfiles/*
