@@ -1,7 +1,8 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
 
 from .views import IndexView
 from cp_api.views import CulturalPropertyViewSet, MovieViewSet, TagViewSet
@@ -29,6 +30,12 @@ urlpatterns = [
     path('api/v1/auth/', include(('account.urls', 'account'), namespace='auth')),
 ]
 
-# メディアファイルの配信（開発環境・本番環境両方）
-# 本番環境ではNginx等で配信するのが理想だが、Fly.ioではDjangoで直接配信
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# メディアファイルの配信
+# DEBUG=Trueの場合は static() を使用、DEBUG=Falseの場合は serve を直接使用
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # 本番環境でもメディアファイルを配信（Fly.io Volume対応）
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]
