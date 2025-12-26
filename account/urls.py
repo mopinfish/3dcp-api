@@ -14,7 +14,8 @@ from account.views import (
     UserProfileAPIView,
     PasswordChangeAPIView,
     CheckAuthAPIView,
-    ActiveUsersAPIView,  # ✅ NEW
+    ActiveUsersAPIView,
+    PublicUserProfileAPIView,  # ✅ NEW: Phase 3
 )
 
 app_name = 'account'
@@ -37,4 +38,7 @@ urlpatterns = [
     
     # ✅ NEW: アクティブユーザーAPI
     path('active-users/', ActiveUsersAPIView.as_view(), name='api_active_users'),
+    
+    # ✅ NEW: 公開ユーザープロフィールAPI (Phase 3)
+    path('users/<int:user_id>/', PublicUserProfileAPIView.as_view(), name='api_public_user_profile'),
 ]

@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views.generic import TemplateView
@@ -21,7 +21,8 @@ from .serializers import (
     SignInSerializer,
     EmailVerificationSerializer,
     PasswordChangeSerializer,
-    ActiveUserSerializer,  # ✅ NEW
+    ActiveUserSerializer,
+    PublicUserProfileSerializer,  # ✅ NEW: Phase 3
 )
 from .forms import LoginForm
 
@@ -57,7 +58,17 @@ class SignUpAPIView(generics.CreateAPIView):
     ユーザー登録API
     POST /api/v1/auth/signup/
     
-    🔧 修正: トークン二重生成の問題を解決
+    リクエストボディ:
+        - username: ユーザー名 (必須)
+        - email: メールアドレス (必須)
+        - password: パスワード (必須)
+        - password_confirm: パスワード確認 (必須)
+        - name: 表示名 (オプション)
+    
+    レスポンス:
+        - user: ユーザー情報
+        - token: 認証トークン
+        - message: メッセージ
     """
     serializer_class = SignUpSerializer
     permission_classes = [permissions.AllowAny]
@@ -66,108 +77,81 @@ class SignUpAPIView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
-        # 🔧 重要: DBから最新のトークンを取得
-        # serializer.save() 内で generate_verification_token() が呼ばれて
-        # 新しいトークンがDBに保存されるが、メモリ上のuserオブジェクトは
-        # 古いトークンを持っている可能性があるため、DBから再取得する
-        user.refresh_from_db()
-        verification_token = user.email_verification_token
-
-        logger.info("=" * 80)
-        logger.info(f"🔑 User Registration: {user.username}")
-        logger.info(f"   Email: {user.email}")
-        logger.info(f"   Token (from DB): {verification_token}")
-        logger.info(f"   Token created at: {user.email_verification_token_created_at}")
-        logger.info("=" * 80)
-
-        # 認証メールを送信
-        self.send_verification_email(user, verification_token)
-
+        
+        # 認証トークンを生成
+        token, _ = Token.objects.get_or_create(user=user)
+        
+        # メール認証メールを送信
+        self.send_verification_email(user, user.email_verification_token)
+        
         return Response({
-            'message': '登録が完了しました。メールアドレスに送信された認証リンクをクリックしてください。',
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'token': token.key,
+            'message': 'アカウントを作成しました。メールアドレスの認証をお願いします。'
         }, status=status.HTTP_201_CREATED)
 
     def send_verification_email(self, user, token):
         """
-        メール認証用のメールを送信
+        メール認証メールを送信
         """
-        # トークンを文字列に変換（念のため）
-        token_str = str(token)
-        verification_url = f"{settings.FRONTEND_URL}/auth/verify-email?token={token_str}"
+        frontend_url = settings.FRONTEND_URL
+        verification_url = f"{frontend_url}/verify-email?token={token}"
         
-        logger.info(f"📧 Sending verification email to {user.email}")
-        logger.info(f"   Token in email: {token_str}")
-        logger.info(f"   Verification URL: {verification_url}")
+        subject = '【3D文化財共有サイト】メールアドレスの認証'
         
-        subject = '【3DCP】メールアドレスの認証'
-        message = f"""
-{user.username} 様
-
-3DCPへのご登録ありがとうございます。
-
-以下のリンクをクリックして、メールアドレスの認証を完了してください:
-{verification_url}
-
-このリンクは24時間有効です。
-
-※このメールに心当たりがない場合は、このメールを無視してください。
-
----
-3DCP運営チーム
-        """
+        # HTMLメール
+        html_message = render_to_string('account/emails/verification_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+        })
+        
+        # テキストメール
+        plain_message = strip_tags(html_message)
         
         try:
             send_mail(
                 subject=subject,
-                message=message,
+                message=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
+                html_message=html_message,
                 fail_silently=False,
             )
-            logger.info(f"✅ Verification email sent successfully to {user.email}")
+            logger.info(f"Verification email sent to {user.email}")
         except Exception as e:
-            logger.error(f"❌ Failed to send verification email: {e}")
-            raise
+            logger.error(f"Failed to send verification email to {user.email}: {e}")
 
 
 class SignInAPIView(APIView):
     """
     ログインAPI
     POST /api/v1/auth/signin/
+    
+    リクエストボディ:
+        - username: ユーザー名またはメールアドレス
+        - password: パスワード
+    
+    レスポンス:
+        - user: ユーザー情報
+        - token: 認証トークン
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # デバッグ用ログ出力
-        logger.info("=" * 50)
-        logger.info("SignIn Request Received")
-        logger.info(f"Request Data: {request.data}")
-        logger.info(f"Request Content-Type: {request.content_type}")
-        logger.info(f"Request Headers: {dict(request.headers)}")
-        logger.info("=" * 50)
-        
         serializer = SignInSerializer(data=request.data)
-        
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            logger.error(f"Serializer Validation Error: {e}")
-            logger.error(f"Serializer Errors: {serializer.errors}")
-            raise
+        serializer.is_valid(raise_exception=True)
         
         user = serializer.validated_data['user']
         
-        # トークン認証を使用する場合
-        token, created = Token.objects.get_or_create(user=user)
+        # セッション認証
+        login(request, user)
         
-        logger.info(f"User {user.username} logged in successfully")
+        # トークン認証用のトークンを取得または作成
+        token, _ = Token.objects.get_or_create(user=user)
         
         return Response({
-            'message': 'ログインに成功しました。',
-            'token': token.key,
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'token': token.key
         }, status=status.HTTP_200_OK)
 
 
@@ -182,8 +166,11 @@ class SignOutAPIView(APIView):
         # トークンを削除
         try:
             request.user.auth_token.delete()
-        except Token.DoesNotExist:
+        except:
             pass
+        
+        # セッションをクリア
+        logout(request)
         
         return Response({
             'message': 'ログアウトしました。'
@@ -192,119 +179,46 @@ class SignOutAPIView(APIView):
 
 class EmailVerificationAPIView(APIView):
     """
-    メール認証API（完全修正版）
+    メール認証API
     POST /api/v1/auth/verify-email/
     
-    🔧 修正: UUIDトークンの比較ロジックを改善
+    リクエストボディ:
+        - token: メール認証トークン (UUID)
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # デバッグログ
-        logger.info("=" * 80)
-        logger.info("📧 Email Verification Request Received")
-        logger.info(f"Request Data: {request.data}")
-        logger.info(f"Request Method: {request.method}")
-        logger.info(f"Current Server Time (timezone.now()): {timezone.now()}")
-        logger.info("=" * 80)
-        
         serializer = EmailVerificationSerializer(data=request.data)
-        
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            logger.error(f"❌ Serializer Validation Error: {e}")
-            logger.error(f"Serializer Errors: {serializer.errors}")
-            return Response({
-                'error': 'トークンの形式が正しくありません。',
-                'details': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
         
         token = serializer.validated_data['token']
         
-        # 🔧 UUIDを文字列に変換（ハイフン付きの標準形式）
-        token_str = str(token)
-        logger.info(f"🔑 Token received: {token_str}")
-        logger.info(f"Token type: {type(token)}")
-        
         try:
-            # 🔧 改善点: UUIDフィールドでの検索を文字列に統一
-            user = User.objects.get(email_verification_token=token_str)
+            user = User.objects.get(email_verification_token=token)
             
-            logger.info("=" * 80)
-            logger.info(f"👤 User found!")
-            logger.info(f"  - Username: {user.username}")
-            logger.info(f"  - Email: {user.email}")
-            logger.info(f"  - Is already verified: {user.is_email_verified}")
-            logger.info(f"  - Token in DB: {user.email_verification_token}")
-            logger.info(f"  - Token type in DB: {type(user.email_verification_token)}")
-            logger.info(f"  - Token created at: {user.email_verification_token_created_at}")
-            logger.info("=" * 80)
-            
-            # すでに認証済みの場合
-            if user.is_email_verified:
-                logger.info("✅ User is already verified")
-                return Response({
-                    'message': 'このメールアドレスは既に認証済みです。'
-                }, status=status.HTTP_200_OK)
-            
-            # 🔧 トークンの有効期限チェックを詳細にログ出力
+            # トークンの有効期限チェック（24時間）
             if user.email_verification_token_created_at:
-                current_time = timezone.now()
-                token_age = current_time - user.email_verification_token_created_at
-                hours_elapsed = token_age.total_seconds() / 3600
-                is_valid = token_age.total_seconds() < 86400  # 24時間
-                
-                logger.info("=" * 80)
-                logger.info("⏰ Token Validity Check:")
-                logger.info(f"  - Token created at: {user.email_verification_token_created_at}")
-                logger.info(f"  - Current time: {current_time}")
-                logger.info(f"  - Time elapsed: {token_age}")
-                logger.info(f"  - Hours elapsed: {hours_elapsed:.2f}")
-                logger.info(f"  - Is valid (< 24h): {is_valid}")
-                logger.info("=" * 80)
+                token_age = timezone.now() - user.email_verification_token_created_at
+                if token_age.total_seconds() > 86400:  # 24時間 = 86400秒
+                    return Response({
+                        'error': 'トークンの有効期限が切れています。再度認証メールを送信してください。'
+                    }, status=status.HTTP_400_BAD_REQUEST)
             
-            # verify_emailメソッドでトークン検証と有効期限チェック
-            if user.verify_email(token_str):
-                logger.info("✅ Email verification successful!")
-                return Response({
-                    'message': 'メールアドレスの認証が完了しました。',
-                    'user': UserSerializer(user).data
-                }, status=status.HTTP_200_OK)
-            else:
-                logger.warning("⚠️ Token expired or invalid")
-                return Response({
-                    'error': '認証トークンの有効期限が切れています。',
-                    'message': '再度サインアップしてください。'
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+            # メール認証を完了
+            user.is_email_verified = True
+            user.email_verification_token = None
+            user.email_verification_token_created_at = None
+            user.save()
+            
+            return Response({
+                'message': 'メールアドレスの認証が完了しました。',
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_200_OK)
+            
         except User.DoesNotExist:
-            logger.error("=" * 80)
-            logger.error(f"❌ User with token NOT FOUND")
-            logger.error(f"  - Token searched: {token_str}")
-            logger.error("=" * 80)
-            
-            # デバッグのため、全ユーザーのトークンを確認（本番環境では削除推奨）
-            if settings.DEBUG:
-                all_users = User.objects.all()
-                logger.error(f"📊 Total users in database: {all_users.count()}")
-                for u in all_users[:5]:  # 最初の5ユーザーのみ
-                    logger.error(f"  - User: {u.username}, Token: {u.email_verification_token}")
-            
             return Response({
-                'error': '無効な認証トークンです。',
-                'details': 'トークンが見つかりませんでした。'
+                'error': '無効なトークンです。'
             }, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            logger.error("=" * 80)
-            logger.error(f"❌ Unexpected error during email verification: {e}")
-            logger.exception("Full traceback:")
-            logger.error("=" * 80)
-            return Response({
-                'error': 'サーバーエラーが発生しました。',
-                'details': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ResendVerificationEmailAPIView(APIView):
@@ -312,131 +226,82 @@ class ResendVerificationEmailAPIView(APIView):
     認証メール再送信API
     POST /api/v1/auth/resend-verification/
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        email = request.data.get('email')
+        user = request.user
         
-        if not email:
+        if user.is_email_verified:
             return Response({
-                'error': 'メールアドレスを入力してください。'
+                'error': 'このアカウントは既に認証されています。'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            user = User.objects.get(email=email)
-            
-            if user.is_email_verified:
-                return Response({
-                    'message': 'このメールアドレスは既に認証済みです。'
-                }, status=status.HTTP_200_OK)
-            
-            # 新しいトークンを生成
-            new_token = user.generate_verification_token()
-            
-            logger.info(f"🔄 Resending verification email for {user.username}")
-            logger.info(f"   New token: {new_token}")
-            
-            # 認証メールを再送信
-            self.send_verification_email(user, new_token)
-            
-            return Response({
-                'message': '認証メールを再送信しました。'
-            }, status=status.HTTP_200_OK)
-            
-        except User.DoesNotExist:
-            return Response({
-                'error': 'このメールアドレスは登録されていません。'
-            }, status=status.HTTP_400_BAD_REQUEST)
-    
+        # 新しいトークンを生成
+        user.generate_verification_token()
+        
+        # メール送信
+        self.send_verification_email(user, user.email_verification_token)
+        
+        return Response({
+            'message': '認証メールを再送信しました。'
+        }, status=status.HTTP_200_OK)
+
     def send_verification_email(self, user, token):
         """
-        メール認証用のメールを送信
+        メール認証メールを送信
         """
-        token_str = str(token)
-        verification_url = f"{settings.FRONTEND_URL}/auth/verify-email?token={token_str}"
+        frontend_url = settings.FRONTEND_URL
+        verification_url = f"{frontend_url}/verify-email?token={token}"
         
-        subject = '【3DCP】メールアドレスの認証(再送)'
-        message = f"""
-{user.username} 様
-
-メール認証リンクを再送信します。
-
-以下のリンクをクリックして、メールアドレスの認証を完了してください:
-{verification_url}
-
-このリンクは24時間有効です。
-
-※このメールに心当たりがない場合は、このメールを無視してください。
-
----
-3DCP運営チーム
-        """
+        subject = '【3D文化財共有サイト】メールアドレスの認証'
         
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        # HTMLメール
+        html_message = render_to_string('account/emails/verification_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+        })
+        
+        # テキストメール
+        plain_message = strip_tags(html_message)
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            logger.info(f"Verification email sent to {user.email}")
+        except Exception as e:
+            logger.error(f"Failed to send verification email to {user.email}: {e}")
 
 
 class UserProfileAPIView(generics.RetrieveUpdateAPIView):
     """
-    ユーザー情報取得・更新API
-    GET /api/v1/auth/profile/
-    PUT /api/v1/auth/profile/
-    PATCH /api/v1/auth/profile/
+    ユーザープロフィールAPI
+    GET /api/v1/auth/profile/ - プロフィール取得
+    PUT/PATCH /api/v1/auth/profile/ - プロフィール更新
     """
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
-    
+
     def update(self, request, *args, **kwargs):
-        """
-        プロフィール更新（PUT/PATCH）
-        デバッグログを追加
-        """
-        logger.info("=" * 80)
-        logger.info("🔑 Profile Update Request")
-        logger.info(f"  Method: {request.method}")
-        logger.info(f"  User: {request.user.username}")
-        logger.info(f"  Data: {request.data}")
-        logger.info(f"  Files: {request.FILES}")
-        logger.info(f"  Content-Type: {request.content_type}")
-        logger.info("=" * 80)
-        
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            logger.error("=" * 80)
-            logger.error("❌ Serializer Validation Error")
-            logger.error(f"  Errors: {serializer.errors}")
-            logger.error(f"  Exception: {str(e)}")
-            logger.error("=" * 80)
-            raise
-        
+        serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        
-        logger.info("=" * 80)
-        logger.info("✅ Profile Update Successful")
-        logger.info(f"  Updated fields: {list(request.data.keys())}")
-        logger.info("=" * 80)
-        
-        return Response(serializer.data)
-    
-    def partial_update(self, request, *args, **kwargs):
-        """
-        部分更新（PATCH）
-        """
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
+
+        return Response({
+            'user': serializer.data,
+            'message': 'プロフィールを更新しました。'
+        }, status=status.HTTP_200_OK)
+
 
 class PasswordChangeAPIView(APIView):
     """
@@ -446,18 +311,20 @@ class PasswordChangeAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        serializer = PasswordChangeSerializer(
-            data=request.data,
-            context={'request': request}
-        )
+        serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
-            # パスワードを変更
-            request.user.set_password(serializer.validated_data['new_password'])
-            request.user.save()
+            user = request.user
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            
+            # トークンを再生成（セキュリティのため）
+            Token.objects.filter(user=user).delete()
+            new_token = Token.objects.create(user=user)
             
             return Response({
-                'message': 'パスワードを変更しました。'
+                'message': 'パスワードを変更しました。',
+                'token': new_token.key
             }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -532,3 +399,46 @@ class ActiveUsersAPIView(APIView):
             'users': serializer.data,
             'count': len(serializer.data)
         }, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# ✅ NEW: 公開ユーザープロフィールAPI (Phase 3)
+# ==========================================
+
+class PublicUserProfileAPIView(APIView):
+    """
+    公開ユーザープロフィール取得API
+    GET /api/v1/auth/users/<user_id>/
+    
+    他のユーザーが閲覧可能な公開プロフィール情報を取得
+    
+    パスパラメータ:
+        - user_id: ユーザーID
+    
+    レスポンス:
+        - id: ユーザーID
+        - username: ユーザー名
+        - name: 表示名
+        - bio: 自己紹介
+        - avatar: アバター画像
+        - avatar_url: アバター画像URL（絶対パス）
+        - cultural_property_count: 文化財登録数
+        - movie_count: ムービー登録数
+        - date_joined: 登録日
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, user_id):
+        # ユーザーを取得（存在しない場合は404）
+        user = get_object_or_404(User, id=user_id, is_active=True)
+        
+        # 登録数を集計
+        user = User.objects.annotate(
+            cultural_property_count=Count('cultural_properties', distinct=True),
+            movie_count=Count('movies', distinct=True),
+        ).get(id=user_id)
+        
+        # シリアライズ
+        serializer = PublicUserProfileSerializer(user, context={'request': request})
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)

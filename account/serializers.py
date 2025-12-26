@@ -245,3 +245,41 @@ class ActiveUserSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
+
+
+# ✅ NEW: 公開ユーザープロフィール用シリアライザー
+class PublicUserProfileSerializer(serializers.ModelSerializer):
+    """
+    公開ユーザープロフィール情報のシリアライザー
+    
+    他のユーザーが閲覧可能な情報のみを含む
+    """
+    cultural_property_count = serializers.IntegerField(read_only=True)
+    movie_count = serializers.IntegerField(read_only=True)
+    avatar_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'name',
+            'bio',
+            'avatar',
+            'avatar_url',
+            'cultural_property_count',
+            'movie_count',
+            'date_joined',
+        ]
+        read_only_fields = fields
+    
+    def get_avatar_url(self, obj):
+        """
+        アバター画像の絶対URL
+        """
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
