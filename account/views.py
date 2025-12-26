@@ -8,6 +8,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
+from django.db.models import Count
 
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
@@ -19,7 +20,8 @@ from .serializers import (
     SignUpSerializer,
     SignInSerializer,
     EmailVerificationSerializer,
-    PasswordChangeSerializer
+    PasswordChangeSerializer,
+    ActiveUserSerializer,  # ✅ NEW
 )
 from .forms import LoginForm
 
@@ -73,7 +75,7 @@ class SignUpAPIView(generics.CreateAPIView):
         verification_token = user.email_verification_token
 
         logger.info("=" * 80)
-        logger.info(f"📝 User Registration: {user.username}")
+        logger.info(f"🔑 User Registration: {user.username}")
         logger.info(f"   Email: {user.email}")
         logger.info(f"   Token (from DB): {verification_token}")
         logger.info(f"   Token created at: {user.email_verification_token_created_at}")
@@ -398,7 +400,7 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
         デバッグログを追加
         """
         logger.info("=" * 80)
-        logger.info("📝 Profile Update Request")
+        logger.info("🔑 Profile Update Request")
         logger.info(f"  Method: {request.method}")
         logger.info(f"  User: {request.user.username}")
         logger.info(f"  Data: {request.data}")
@@ -472,4 +474,61 @@ class CheckAuthAPIView(APIView):
         return Response({
             'isAuthenticated': True,
             'user': UserSerializer(request.user).data
+        }, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# ✅ NEW: アクティブユーザーAPI
+# ==========================================
+
+class ActiveUsersAPIView(APIView):
+    """
+    アクティブユーザー一覧取得API
+    GET /api/v1/auth/active-users/
+    
+    文化財またはムービーを登録しているユーザーを
+    登録数の多い順に取得
+    
+    クエリパラメータ:
+        - limit: 取得件数（デフォルト: 5、最大: 20）
+    
+    レスポンス:
+        - users: アクティブユーザー一覧
+            - id: ユーザーID
+            - username: ユーザー名
+            - name: 表示名
+            - avatar: アバター画像URL
+            - cultural_property_count: 文化財登録数
+            - movie_count: ムービー登録数
+            - total_count: 合計登録数
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        # クエリパラメータからlimitを取得
+        try:
+            limit = int(request.query_params.get('limit', 5))
+            limit = min(max(limit, 1), 20)  # 1〜20の範囲に制限
+        except (ValueError, TypeError):
+            limit = 5
+        
+        # 文化財またはムービーを登録しているユーザーを取得
+        # Countで登録数を集計し、合計数でソート
+        users = User.objects.annotate(
+            cultural_property_count=Count('cultural_properties', distinct=True),
+            movie_count=Count('movies', distinct=True),
+        ).filter(
+            # 文化財またはムービーを1件以上登録しているユーザー
+            cultural_property_count__gt=0
+        ).order_by(
+            '-cultural_property_count',  # 文化財登録数の降順
+            '-movie_count',  # ムービー登録数の降順
+        )[:limit]
+        
+        # シリアライズ
+        serializer = ActiveUserSerializer(users, many=True, context={'request': request})
+        
+        return Response({
+            'users': serializer.data,
+            'count': len(serializer.data)
         }, status=status.HTTP_200_OK)

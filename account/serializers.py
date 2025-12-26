@@ -201,3 +201,47 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError({'new_password': list(e.messages)})
         
         return data
+
+
+# ✅ NEW: アクティブユーザー用シリアライザー
+class ActiveUserSerializer(serializers.ModelSerializer):
+    """
+    アクティブユーザー情報のシリアライザー
+    
+    文化財・ムービーの登録数を含む
+    """
+    cultural_property_count = serializers.IntegerField(read_only=True)
+    movie_count = serializers.IntegerField(read_only=True)
+    total_count = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'name',
+            'avatar',
+            'avatar_url',
+            'cultural_property_count',
+            'movie_count',
+            'total_count',
+        ]
+        read_only_fields = fields
+    
+    def get_total_count(self, obj):
+        """
+        文化財 + ムービーの合計登録数
+        """
+        return getattr(obj, 'cultural_property_count', 0) + getattr(obj, 'movie_count', 0)
+    
+    def get_avatar_url(self, obj):
+        """
+        アバター画像の絶対URL
+        """
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None

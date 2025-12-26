@@ -11,16 +11,19 @@ cp_api/views.py
 - geomフィールドの自動生成処理を追加
 - regenerate_thumbnailアクションを追加（サムネイル再生成）
 - CSVインポートAPIを追加（プレビュー・実行）
+- ✅ NEW: ordering_fieldsを追加（ソート機能）
+- ✅ NEW: search_fieldsを追加（検索機能）
 """
 
 import logging
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes as drf_permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from django.contrib.gis.geos import Point
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Movie, CulturalProperty, Tag
 from .serializers import (
@@ -30,7 +33,7 @@ from .serializers import (
     MovieCreateSerializer,
     TagSerializer
 )
-from .filters import CulturalPropertyFilter
+from .filters import CulturalPropertyFilter, MovieFilter
 from .permissions import IsOwnerOrReadOnly
 from .services.thumbnail import generate_thumbnail_for_movie
 from .services.csv_importer import CulturalPropertyCSVImporter
@@ -45,12 +48,25 @@ class CulturalPropertyViewSet(viewsets.ModelViewSet):
     - 一覧取得・詳細取得: 認証不要
     - 作成・更新・削除: 認証必須
     - 更新・削除: 作成者本人のみ
+    
+    ✅ 追加機能:
+    - ordering: ソート（created_at, updated_at, name）
+    - search: 検索（name, name_en, address）
     """
     queryset = CulturalProperty.objects.all().prefetch_related(
         'movies', 'images', 'tags', 'created_by'
     ).select_related('created_by')
+    
+    # フィルタリング・ソート・検索設定
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = CulturalPropertyFilter
-    filterset_fields = ['name', 'name_en', 'movies']
+    
+    # ✅ ソート可能フィールド
+    ordering_fields = ['created_at', 'updated_at', 'name', 'id']
+    ordering = ['-updated_at']  # デフォルトのソート順
+    
+    # ✅ 検索可能フィールド
+    search_fields = ['name', 'name_en', 'address', 'note']
     
     # 認証・権限設定
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
@@ -144,12 +160,24 @@ class MovieViewSet(viewsets.ModelViewSet):
     - 更新・削除: 作成者本人のみ
     
     ✅ 追加機能:
+    - ordering: ソート（created_at, updated_at, title）
+    - search: 検索（title, note）
     - regenerate_thumbnail: サムネイルを再生成
     """
     queryset = Movie.objects.all().select_related(
         'cultural_property', 'created_by'
     )
-    filterset_fields = ['title', 'cultural_property']
+    
+    # フィルタリング・ソート・検索設定
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_class = MovieFilter
+    
+    # ✅ ソート可能フィールド
+    ordering_fields = ['created_at', 'updated_at', 'title', 'id']
+    ordering = ['-updated_at']  # デフォルトのソート順
+    
+    # ✅ 検索可能フィールド
+    search_fields = ['title', 'note']
     
     # 認証・権限設定
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
@@ -368,30 +396,29 @@ class CSVImportExecuteView(APIView):
         selected_rows = request.data.get('selected_rows')
         
         try:
-            # インポート実行
+            # インポーターでインポート実行
             importer = CulturalPropertyCSVImporter()
             result = importer.execute(
                 session_id=session_id,
-                created_by=request.user,
+                user=request.user,
                 skip_errors=skip_errors,
                 skip_duplicates=skip_duplicates,
-                selected_row_numbers=selected_rows
+                selected_rows=selected_rows
             )
             
-            if result.success:
-                return Response({
-                    'success': True,
-                    'result': result.to_dict()
-                })
-            else:
-                return Response({
-                    'success': False,
-                    'error': 'インポートに失敗しました',
-                    'result': result.to_dict()
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+            return Response({
+                'success': True,
+                'result': result.to_dict()
+            })
+            
+        except ValueError as e:
+            logger.error(f"❌ インポートエラー: {e}")
+            return Response(
+                {'success': False, 'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            logger.error(f"❌ インポート実行エラー: {e}")
+            logger.error(f"❌ インポートエラー: {e}")
             return Response(
                 {'success': False, 'error': f'インポートに失敗しました: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
