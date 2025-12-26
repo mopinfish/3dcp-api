@@ -34,6 +34,10 @@ ALLOWED_HOSTS = [
     '.vercel.app',
 ]
 
+# プロキシ経由のHTTPSを認識（Fly.io等のリバースプロキシ対応）
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 # CORSの設定
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
