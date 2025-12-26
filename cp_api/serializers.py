@@ -9,9 +9,11 @@ cp_api/serializers.py
 - MovieSerializerにthumbnail_urlを追加（サムネイル画像URL）
 - 作成・更新用のシリアライザーを追加
 - created_byは読み取り専用（自動設定）
+
+注意: フォールバックのサムネイルURLはcdn-luma.comを使用
+（旧cdn.lumalabs.aiは存在しない）
 """
 
-import re
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Movie, CulturalProperty, ImageUpload, Tag
@@ -66,7 +68,11 @@ class MovieSerializer(serializers.ModelSerializer):
         
         優先順位:
         1. DBに保存されたサムネイル画像
-        2. フォールバック: Luma CDNの直接参照
+        2. フォールバック: None（フロントエンドでプレースホルダーを表示）
+        
+        注意: 以前はcdn.lumalabs.aiを直接参照していたが、
+        このドメインは存在しないため、フォールバックはNoneを返す。
+        サムネイルはOGP画像経由でcdn-luma.comから取得・保存される。
         """
         # DBに保存されたサムネイルがある場合
         if obj.thumbnail:
@@ -75,12 +81,8 @@ class MovieSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.thumbnail.url)
             return obj.thumbnail.url
         
-        # フォールバック: Luma CDNを直接参照
-        if obj.url and 'lumalabs.ai' in obj.url:
-            match = re.search(r'lumalabs\.ai/capture/([a-zA-Z0-9-]+)', obj.url)
-            if match:
-                return f"https://cdn.lumalabs.ai/captures/{match.group(1)}/thumbnail.jpg"
-        
+        # サムネイルがない場合はNoneを返す
+        # フロントエンドでプレースホルダーを表示
         return None
 
 

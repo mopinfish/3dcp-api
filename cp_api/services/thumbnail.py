@@ -4,8 +4,8 @@ cp_api/services/thumbnail.py
 ムービー（3D映像）のサムネイル生成サービス
 
 機能:
-- Luma AIのURLからキャプチャIDを抽出
-- Luma CDNからサムネイル画像をダウンロード
+- Luma AIのページからOGP画像URLを抽出
+- cdn-luma.comからサムネイル画像をダウンロード
 - 画像のリサイズと最適化
 - Movieモデルへの保存
 """
@@ -13,6 +13,7 @@ cp_api/services/thumbnail.py
 import re
 import logging
 from io import BytesIO
+from urllib.parse import unquote
 
 import requests
 from PIL import Image
@@ -38,22 +39,85 @@ def extract_capture_id(luma_url: str) -> str | None:
     return match.group(1) if match else None
 
 
-def download_luma_thumbnail(capture_id: str, timeout: int = 30) -> bytes | None:
+def fetch_og_image_url(luma_url: str, timeout: int = 30) -> str | None:
     """
-    Luma CDNからサムネイル画像をダウンロード
+    LumaページのHTMLからOGP画像URLを抽出
     
     Args:
-        capture_id: Luma AIのキャプチャID
+        luma_url: Luma AIのキャプチャページURL
+        timeout: リクエストのタイムアウト秒数
+    
+    Returns:
+        OGP画像URL（cdn-luma.comの直接URL） または None
+    """
+    try:
+        logger.info(f"📄 Fetching OGP image from: {luma_url}")
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.get(luma_url, headers=headers, timeout=timeout)
+        
+        if response.status_code != 200:
+            logger.warning(f"⚠️ Failed to fetch page: HTTP {response.status_code}")
+            return None
+        
+        html = response.text
+        
+        # og:image メタタグからURLを抽出
+        # パターン1: content属性内のcdn-luma.com URL
+        og_match = re.search(r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']', html)
+        if not og_match:
+            # パターン2: content属性が先に来る場合
+            og_match = re.search(r'<meta[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']', html)
+        
+        if not og_match:
+            logger.warning("⚠️ og:image meta tag not found")
+            return None
+        
+        og_url = og_match.group(1)
+        logger.info(f"📍 Found og:image URL: {og_url}")
+        
+        # og:image URLからcdn-luma.comの直接URLを抽出
+        # 形式: https://lumalabs.ai/api/og/image/capture?src=https%3A%2F%2Fcdn-luma.com%2F...%2F_thumb.jpg&type=captures
+        src_match = re.search(r'src=([^&]+)', og_url)
+        if src_match:
+            encoded_url = src_match.group(1)
+            cdn_url = unquote(encoded_url)
+            logger.info(f"✅ Extracted CDN URL: {cdn_url}")
+            return cdn_url
+        
+        # srcパラメータがない場合はog:image URLをそのまま返す
+        return og_url
+        
+    except requests.Timeout:
+        logger.error(f"❌ Timeout fetching page: {luma_url}")
+        return None
+    except requests.RequestException as e:
+        logger.error(f"❌ Error fetching page: {e}")
+        return None
+
+
+def download_thumbnail(image_url: str, timeout: int = 30) -> bytes | None:
+    """
+    画像URLからサムネイル画像をダウンロード
+    
+    Args:
+        image_url: 画像のURL（cdn-luma.comまたはその他）
         timeout: リクエストのタイムアウト秒数
     
     Returns:
         画像のバイナリデータ または None
     """
-    cdn_url = f"https://cdn.lumalabs.ai/captures/{capture_id}/thumbnail.jpg"
-    
     try:
-        logger.info(f"📥 Downloading thumbnail from: {cdn_url}")
-        response = requests.get(cdn_url, timeout=timeout)
+        logger.info(f"📥 Downloading thumbnail from: {image_url}")
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.get(image_url, headers=headers, timeout=timeout)
         
         if response.status_code == 200:
             logger.info(f"✅ Successfully downloaded thumbnail ({len(response.content)} bytes)")
@@ -63,7 +127,7 @@ def download_luma_thumbnail(capture_id: str, timeout: int = 30) -> bytes | None:
             return None
             
     except requests.Timeout:
-        logger.error(f"❌ Timeout downloading thumbnail from: {cdn_url}")
+        logger.error(f"❌ Timeout downloading thumbnail from: {image_url}")
         return None
     except requests.RequestException as e:
         logger.error(f"❌ Error downloading thumbnail: {e}")
@@ -143,28 +207,28 @@ def generate_thumbnail_for_movie(movie, force: bool = False) -> bool:
         logger.info(f"ℹ️ Movie #{movie.id} is not a Luma AI URL, skipping")
         return False
     
-    # キャプチャIDを抽出
-    capture_id = extract_capture_id(movie.url)
-    if not capture_id:
-        logger.warning(f"⚠️ Could not extract capture ID from URL: {movie.url}")
+    logger.info(f"🎬 Generating thumbnail for Movie #{movie.id}")
+    
+    # Step 1: LumaページからOGP画像URLを取得
+    og_image_url = fetch_og_image_url(movie.url)
+    if not og_image_url:
+        logger.error(f"❌ Failed to get OGP image URL for Movie #{movie.id}")
         return False
     
-    logger.info(f"🎬 Generating thumbnail for Movie #{movie.id} (capture_id: {capture_id})")
-    
-    # サムネイルをダウンロード
-    image_data = download_luma_thumbnail(capture_id)
+    # Step 2: サムネイル画像をダウンロード
+    image_data = download_thumbnail(og_image_url)
     if not image_data:
         logger.error(f"❌ Failed to download thumbnail for Movie #{movie.id}")
         return False
     
-    # リサイズ
+    # Step 3: リサイズ
     try:
         resized_data = resize_thumbnail(image_data)
     except Exception as e:
         logger.error(f"❌ Failed to resize thumbnail for Movie #{movie.id}: {e}")
         return False
     
-    # 保存
+    # Step 4: 保存
     try:
         filename = f"movie-{movie.id}.jpg"
         
