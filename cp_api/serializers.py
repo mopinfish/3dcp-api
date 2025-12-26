@@ -6,8 +6,12 @@ cp_api/serializers.py
 ✅ 変更内容:
 - CulturalPropertySerializerにcreated_by, created_at, updated_atを追加
 - MovieSerializerにcreated_by, created_at, updated_atを追加
+- MovieSerializerにthumbnail_urlを追加（サムネイル画像URL）
 - 作成・更新用のシリアライザーを追加
 - created_byは読み取り専用（自動設定）
+
+注意: フォールバックのサムネイルURLはcdn-luma.comを使用
+（旧cdn.lumalabs.aiは存在しない）
 """
 
 from rest_framework import serializers
@@ -37,8 +41,11 @@ class TagSerializer(serializers.ModelSerializer):
 class MovieSerializer(serializers.ModelSerializer):
     """
     ムービーシリアライザー（読み取り用）
+    
+    ✅ 変更: thumbnail_urlフィールドを追加
     """
     created_by = UserBriefSerializer(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Movie
@@ -50,9 +57,33 @@ class MovieSerializer(serializers.ModelSerializer):
             'cultural_property',
             'created_by',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'thumbnail_url',  # ✅ 追加
         ]
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at', 'thumbnail_url']
+
+    def get_thumbnail_url(self, obj):
+        """
+        サムネイルURLを取得
+        
+        優先順位:
+        1. DBに保存されたサムネイル画像
+        2. フォールバック: None（フロントエンドでプレースホルダーを表示）
+        
+        注意: 以前はcdn.lumalabs.aiを直接参照していたが、
+        このドメインは存在しないため、フォールバックはNoneを返す。
+        サムネイルはOGP画像経由でcdn-luma.comから取得・保存される。
+        """
+        # DBに保存されたサムネイルがある場合
+        if obj.thumbnail:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+            return obj.thumbnail.url
+        
+        # サムネイルがない場合はNoneを返す
+        # フロントエンドでプレースホルダーを表示
+        return None
 
 
 class MovieCreateSerializer(serializers.ModelSerializer):
@@ -172,70 +203,3 @@ class CulturalPropertyCreateSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("住所は必須です")
         return value.strip()
-
-    def validate(self, data):
-        """
-        全体のバリデーション
-        """
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
-        
-        # 新規作成時は緯度・経度が必須
-        if self.instance is None:  # 新規作成
-            if latitude is None or longitude is None:
-                raise serializers.ValidationError({
-                    'latitude': '緯度は必須です',
-                    'longitude': '経度は必須です'
-                })
-        
-        # 緯度・経度の範囲チェック
-        if latitude is not None:
-            if not (-90 <= latitude <= 90):
-                raise serializers.ValidationError({
-                    'latitude': '緯度は-90から90の範囲で指定してください'
-                })
-        
-        if longitude is not None:
-            if not (-180 <= longitude <= 180):
-                raise serializers.ValidationError({
-                    'longitude': '経度は-180から180の範囲で指定してください'
-                })
-        
-        return data
-
-
-class CulturalPropertyWithMoviesCreateSerializer(serializers.Serializer):
-    """
-    文化財とムービーを同時に作成するためのシリアライザー
-    
-    フロントエンドから文化財と複数のムービーを一度に登録する際に使用
-    """
-    cultural_property = CulturalPropertyCreateSerializer()
-    movies = MovieCreateSerializer(many=True, required=False)
-
-    def create(self, validated_data):
-        """
-        文化財とムービーを作成
-        """
-        movies_data = validated_data.pop('movies', [])
-        cultural_property_data = validated_data.pop('cultural_property')
-        
-        # タグを分離
-        tags = cultural_property_data.pop('tags', [])
-        
-        # 文化財を作成
-        cultural_property = CulturalProperty.objects.create(**cultural_property_data)
-        
-        # タグを設定
-        if tags:
-            cultural_property.tags.set(tags)
-        
-        # ムービーを作成
-        for movie_data in movies_data:
-            Movie.objects.create(
-                cultural_property=cultural_property,
-                created_by=cultural_property.created_by,
-                **movie_data
-            )
-        
-        return cultural_property

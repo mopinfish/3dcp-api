@@ -3,10 +3,10 @@ cp_api/models.py
 
 文化財（CulturalProperty）とムービー（Movie）のモデル定義
 
-✅ 変更内容:
-- CulturalPropertyモデルにcreated_by, created_at, updated_atフィールドを追加
-- Movieモデルにcreated_by, created_at, updated_atフィールドを追加
-- 既存データとの互換性のため、created_byはnull=True, blank=Trueに設定
+✅ 変更履歴:
+- CulturalPropertyモデルにcreated_by, created_at, updated_atを追加
+- Movieモデルにcreated_by, created_at, updated_atを追加
+- Movieモデルにthumbnailフィールドを追加（サムネイル画像保存用）
 """
 
 import os
@@ -51,7 +51,7 @@ class CulturalProperty(models.Model):
         verbose_name='タグ'
     )
 
-    # ✅ 新規追加: 作成者フィールド
+    # 作成者フィールド
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -61,7 +61,7 @@ class CulturalProperty(models.Model):
         verbose_name='作成者'
     )
 
-    # ✅ 新規追加: タイムスタンプフィールド
+    # タイムスタンプフィールド
     created_at = models.DateTimeField(
         auto_now_add=True,
         null=True,  # 既存データとの互換性のためnull=True
@@ -82,6 +82,13 @@ class CulturalProperty(models.Model):
         ordering = ['-created_at', '-id']
 
 
+def thumbnail_upload_to(instance, filename):
+    """サムネイル画像のアップロード先パスを生成"""
+    # movie-{id}.jpg の形式で保存
+    ext = filename.split('.')[-1] if '.' in filename else 'jpg'
+    return f'thumbnails/movie-{instance.id}.{ext}'
+
+
 class Movie(models.Model):
     """ムービー（3D映像）モデル"""
     url = models.CharField(max_length=254, verbose_name='URL')
@@ -90,13 +97,13 @@ class Movie(models.Model):
     cultural_property = models.ForeignKey(
         CulturalProperty, 
         related_name='movies', 
-        on_delete=models.SET_NULL,  # DO_NOTHINGからSET_NULLに変更（安全性向上）
+        on_delete=models.SET_NULL,
         null=True, 
         blank=True,
         verbose_name='文化財'
     )
 
-    # ✅ 新規追加: 作成者フィールド
+    # 作成者フィールド
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -106,7 +113,7 @@ class Movie(models.Model):
         verbose_name='作成者'
     )
 
-    # ✅ 新規追加: タイムスタンプフィールド
+    # タイムスタンプフィールド
     created_at = models.DateTimeField(
         auto_now_add=True,
         null=True,  # 既存データとの互換性のためnull=True
@@ -116,6 +123,14 @@ class Movie(models.Model):
         auto_now=True,
         null=True,  # 既存データとの互換性のためnull=True
         verbose_name='更新日時'
+    )
+
+    # ✅ 新規追加: サムネイル画像フィールド
+    thumbnail = models.ImageField(
+        upload_to=thumbnail_upload_to,
+        null=True,
+        blank=True,
+        verbose_name='サムネイル'
     )
 
     def __str__(self):

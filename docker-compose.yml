@@ -1,12 +1,13 @@
 services:
   api:
     build: .
-    #    command: gunicorn --bind :8000 --workers 2 core.wsgi
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/code
     ports:
       - "8000:8000"
+    networks:
+      - app-network
     environment:
       DEBUG: 1
       SECRET_KEY: ${SECRET_KEY}
@@ -24,6 +25,8 @@ services:
 
   postgis:
     image: postgis/postgis:15-3.3-alpine
+    networks:
+      - app-network
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -38,3 +41,7 @@ services:
       timeout: 2s
       retries: 5
       start_period: 10s
+
+networks:
+  app-network:
+    driver: bridge

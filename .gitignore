@@ -7,3 +7,6 @@ media/avatars/*
 staticfiles_build/*
 staticfiles/*
 postgis/*
+
+dumprepo.json
+backend.txt
