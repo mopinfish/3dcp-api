@@ -29,5 +29,6 @@ urlpatterns = [
     path('api/v1/auth/', include(('account.urls', 'account'), namespace='auth')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# メディアファイルの配信（開発環境・本番環境両方）
+# 本番環境ではNginx等で配信するのが理想だが、Fly.ioではDjangoで直接配信
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
