@@ -1,12 +1,13 @@
 """
-cp_api/services/__init__.py
+cp_api/services パッケージ
 
-サービス層のパッケージ初期化
+サムネイル生成などのビジネスロジックを提供
 """
 
 from .thumbnail import (
     extract_capture_id,
-    download_luma_thumbnail,
+    fetch_og_image_url,
+    download_thumbnail,
     resize_thumbnail,
     generate_thumbnail_for_movie,
     delete_thumbnail_for_movie,
@@ -14,7 +15,8 @@ from .thumbnail import (
 
 __all__ = [
     'extract_capture_id',
-    'download_luma_thumbnail',
+    'fetch_og_image_url',
+    'download_thumbnail',
     'resize_thumbnail',
     'generate_thumbnail_for_movie',
     'delete_thumbnail_for_movie',
