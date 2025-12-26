@@ -9,6 +9,7 @@ cp_api/views.py
 - perform_updateをオーバーライドして権限チェック
 - /my/エンドポイントを追加（自分が作成したデータを取得）
 - geomフィールドの自動生成処理を追加
+- regenerate_thumbnailアクションを追加（サムネイル再生成）
 """
 
 from rest_framework import viewsets, status
@@ -27,6 +28,7 @@ from .serializers import (
 )
 from .filters import CulturalPropertyFilter
 from .permissions import IsOwnerOrReadOnly
+from .services.thumbnail import generate_thumbnail_for_movie
 
 
 class CulturalPropertyViewSet(viewsets.ModelViewSet):
@@ -53,6 +55,14 @@ class CulturalPropertyViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return CulturalPropertyCreateSerializer
         return CulturalPropertySerializer
+
+    def get_serializer_context(self):
+        """
+        シリアライザーにリクエストコンテキストを渡す
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_create(self, serializer):
         """
@@ -107,10 +117,14 @@ class CulturalPropertyViewSet(viewsets.ModelViewSet):
         # ページネーション
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = CulturalPropertySerializer(page, many=True)
+            serializer = CulturalPropertySerializer(
+                page, many=True, context={'request': request}
+            )
             return self.get_paginated_response(serializer.data)
 
-        serializer = CulturalPropertySerializer(queryset, many=True)
+        serializer = CulturalPropertySerializer(
+            queryset, many=True, context={'request': request}
+        )
         return Response(serializer.data)
 
 
@@ -121,6 +135,9 @@ class MovieViewSet(viewsets.ModelViewSet):
     - 一覧取得・詳細取得: 認証不要
     - 作成・更新・削除: 認証必須
     - 更新・削除: 作成者本人のみ
+    
+    ✅ 追加機能:
+    - regenerate_thumbnail: サムネイルを再生成
     """
     queryset = Movie.objects.all().select_related(
         'cultural_property', 'created_by'
@@ -137,6 +154,14 @@ class MovieViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return MovieCreateSerializer
         return MovieSerializer
+
+    def get_serializer_context(self):
+        """
+        シリアライザーにリクエストコンテキストを渡す
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_create(self, serializer):
         """
@@ -159,11 +184,50 @@ class MovieViewSet(viewsets.ModelViewSet):
         # ページネーション
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = MovieSerializer(page, many=True)
+            serializer = MovieSerializer(
+                page, many=True, context={'request': request}
+            )
             return self.get_paginated_response(serializer.data)
 
-        serializer = MovieSerializer(queryset, many=True)
+        serializer = MovieSerializer(
+            queryset, many=True, context={'request': request}
+        )
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def regenerate_thumbnail(self, request, pk=None):
+        """
+        サムネイルを再生成
+        
+        POST /api/movie/{id}/regenerate_thumbnail/
+        
+        権限: 作成者本人のみ
+        """
+        movie = self.get_object()
+        
+        # 権限チェック
+        if movie.created_by and movie.created_by != request.user:
+            return Response(
+                {'error': '権限がありません'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # サムネイル生成
+        success = generate_thumbnail_for_movie(movie, force=True)
+        
+        if success:
+            # 最新のデータを取得
+            movie.refresh_from_db()
+            serializer = MovieSerializer(movie, context={'request': request})
+            return Response({
+                'message': 'サムネイルを再生成しました',
+                'movie': serializer.data
+            })
+        else:
+            return Response(
+                {'error': 'サムネイル生成に失敗しました。Luma AIのURLを確認してください。'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TagViewSet(viewsets.ModelViewSet):
