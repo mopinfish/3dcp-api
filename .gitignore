@@ -3,6 +3,7 @@ __pycache__
 media/documents/*
 media/images/*
 media/avatars/*
+media/thumbnails/*
 .vercel
 staticfiles_build/*
 staticfiles/*

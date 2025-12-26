@@ -10,12 +10,16 @@ cp_api/views.py
 - /my/エンドポイントを追加（自分が作成したデータを取得）
 - geomフィールドの自動生成処理を追加
 - regenerate_thumbnailアクションを追加（サムネイル再生成）
+- CSVインポートAPIを追加（プレビュー・実行）
 """
 
+import logging
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes as drf_permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.views import APIView
 from django.contrib.gis.geos import Point
 
 from .models import Movie, CulturalProperty, Tag
@@ -29,6 +33,9 @@ from .serializers import (
 from .filters import CulturalPropertyFilter
 from .permissions import IsOwnerOrReadOnly
 from .services.thumbnail import generate_thumbnail_for_movie
+from .services.csv_importer import CulturalPropertyCSVImporter
+
+logger = logging.getLogger(__name__)
 
 
 class CulturalPropertyViewSet(viewsets.ModelViewSet):
@@ -240,3 +247,152 @@ class TagViewSet(viewsets.ModelViewSet):
     
     # タグは誰でも閲覧可能、作成・更新・削除は認証必須
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+# =============================================================================
+# CSVインポートAPI
+# =============================================================================
+
+class CSVImportPreviewView(APIView):
+    """
+    CSVファイルをアップロードしてプレビューを取得
+    
+    POST /api/import/preview/
+    
+    リクエスト:
+        - file: CSVファイル (multipart/form-data)
+        - encoding: エンコーディング (オプション、デフォルト: utf-8)
+        - check_duplicates: 重複チェック (オプション、デフォルト: true)
+    
+    レスポンス:
+        - success: 成功フラグ
+        - preview: プレビュー結果
+        - session_id: セッションID（インポート実行時に使用）
+    """
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request):
+        logger.info(f"📥 CSVインポートプレビューリクエスト: user={request.user}")
+        
+        # ファイルを取得
+        file = request.FILES.get('file')
+        if not file:
+            return Response(
+                {'success': False, 'error': 'CSVファイルが指定されていません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # ファイルサイズチェック（10MB制限）
+        if file.size > 10 * 1024 * 1024:
+            return Response(
+                {'success': False, 'error': 'ファイルサイズが10MBを超えています'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # ファイル拡張子チェック
+        if not file.name.lower().endswith('.csv'):
+            return Response(
+                {'success': False, 'error': 'CSVファイルのみアップロード可能です'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # パラメータを取得
+        encoding = request.data.get('encoding', 'utf-8')
+        check_duplicates = request.data.get('check_duplicates', 'true').lower() == 'true'
+        
+        try:
+            # ファイル内容を読み込み
+            file_content = file.read()
+            
+            # インポーターでプレビュー
+            importer = CulturalPropertyCSVImporter(check_duplicates=check_duplicates)
+            result, session_id = importer.preview(
+                file_content=file_content,
+                filename=file.name,
+                encoding=encoding
+            )
+            
+            return Response({
+                'success': True,
+                'preview': result.to_dict(),
+                'session_id': session_id
+            })
+            
+        except UnicodeDecodeError as e:
+            logger.error(f"❌ エンコーディングエラー: {e}")
+            return Response(
+                {'success': False, 'error': f'ファイルのエンコーディングが不正です。{encoding}以外のエンコーディングを試してください。'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"❌ プレビューエラー: {e}")
+            return Response(
+                {'success': False, 'error': f'CSVの解析に失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class CSVImportExecuteView(APIView):
+    """
+    CSVインポートを実行
+    
+    POST /api/import/execute/
+    
+    リクエスト (JSON):
+        - session_id: プレビュー時のセッションID (必須)
+        - skip_errors: エラー行をスキップするか (オプション、デフォルト: true)
+        - skip_duplicates: 重複行をスキップするか (オプション、デフォルト: true)
+        - selected_rows: インポートする行番号のリスト (オプション)
+    
+    レスポンス:
+        - success: 成功フラグ
+        - result: インポート結果
+    """
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+    
+    def post(self, request):
+        logger.info(f"🚀 CSVインポート実行リクエスト: user={request.user}")
+        
+        # パラメータを取得
+        session_id = request.data.get('session_id')
+        if not session_id:
+            return Response(
+                {'success': False, 'error': 'session_idが指定されていません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        skip_errors = request.data.get('skip_errors', True)
+        skip_duplicates = request.data.get('skip_duplicates', True)
+        selected_rows = request.data.get('selected_rows')
+        
+        try:
+            # インポート実行
+            importer = CulturalPropertyCSVImporter()
+            result = importer.execute(
+                session_id=session_id,
+                created_by=request.user,
+                skip_errors=skip_errors,
+                skip_duplicates=skip_duplicates,
+                selected_row_numbers=selected_rows
+            )
+            
+            if result.success:
+                return Response({
+                    'success': True,
+                    'result': result.to_dict()
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'インポートに失敗しました',
+                    'result': result.to_dict()
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            logger.error(f"❌ インポート実行エラー: {e}")
+            return Response(
+                {'success': False, 'error': f'インポートに失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
