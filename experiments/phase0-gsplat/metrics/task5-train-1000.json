@@ -1,0 +1,25 @@
+{
+  "scene": "sample",
+  "train_sec": 275.1,
+  "max_steps": 1000,
+  "ply_size_bytes": 15131018,
+  "num_gaussians": 61006,
+  "app_id": "ap-Nj15asGqPmtaIjCOun7VpL",
+  "gpu": "A10G",
+  "returncode": 0,
+  "val_metrics": {
+    "psnr": 19.038610458374023,
+    "ssim": 0.7658507823944092,
+    "lpips": 0.4334771931171417,
+    "ellipse_time": 0.008088413874308269,
+    "num_GS": 60815
+  },
+  "notes": [
+    "Training completed 1000 steps successfully on A10G GPU",
+    "Symlink fix applied: sfm/images -> frames, data_dir=sfm/",
+    "simple_trainer crashed during SSIM eval at end (KeyboardInterrupt/timeout), but ckpt_999_rank0.pt and stats were saved",
+    "PLY conversion done locally from checkpoint",
+    "Modal workspace hit billing limit; subsequent runs blocked",
+    "Local client disconnected during scheduling wait; training ran and completed remotely"
+  ]
+}

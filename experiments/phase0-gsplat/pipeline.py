@@ -117,6 +117,22 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
     sfm_dir.mkdir(parents=True, exist_ok=True)
     sparse_dir.mkdir(parents=True, exist_ok=True)
 
+    # --- SfM skip optimization: reuse cached reconstruction if present ---
+    sentinel = sfm_dir / "sparse" / "0" / "cameras.bin"
+    if sentinel.exists():
+        print(f"[sfm] skip: existing reconstruction at {sentinel}")
+        frames_count = len(list(frames_dir.glob("frame_*.jpg"))) if frames_dir.exists() else 0
+        return {
+            "scene_name": scene_name,
+            "video_filename": video_filename,
+            "fps": fps,
+            "frames_count": frames_count,
+            "frame_extract_sec": 0,
+            "sfm_sec": 0,
+            "colmap_analyzer_output": "skipped (reconstruction already exists in Volume)",
+            "skipped": True,
+        }
+
     # --- Frame extraction ---
     t0 = time.time()
     subprocess.run(
@@ -216,9 +232,204 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
     }
 
 
+@app.function(
+    image=image,
+    gpu=GPU_TYPE,
+    timeout=TIMEOUT_S,
+    volumes={"/workspace": volume},
+)
+def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
+    """gsplat の simple_trainer を使って 3DGS を学習する。
+    入力: /workspace/{scene_name}/{frames,sfm/sparse/0/}
+    出力: /workspace/{scene_name}/output.ply
+    返り値: 計測値 dict（プリミティブ型のみ）。
+    """
+    import shutil
+
+    base = Path("/workspace") / scene_name
+
+    # Verify SfM outputs exist
+    sfm_sparse_0 = base / "sfm" / "sparse" / "0"
+    assert (sfm_sparse_0 / "cameras.bin").exists(), (
+        f"cameras.bin not found at {sfm_sparse_0} — run prepare_frames_and_sfm first"
+    )
+
+    out_dir = base / "gsplat_out"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- Clone gsplat repo (idempotent) ---
+    gsplat_dir = Path("/tmp/gsplat")
+    if not gsplat_dir.exists():
+        print("[gsplat] cloning gsplat repo v1.4.0 (shallow)...")
+        # Clone the v1.4.0 tag to match the installed gsplat==1.4.0 package.
+        # HEAD main already uses gsplat.color_correct which doesn't exist in 1.4.0.
+        subprocess.run(
+            ["git", "clone", "--depth", "1", "--branch", "v1.4.0",
+             "https://github.com/nerfstudio-project/gsplat.git",
+             str(gsplat_dir)],
+            check=True,
+        )
+        print("[gsplat] installing build tools and examples/requirements.txt...")
+        # Pre-install wheel + clang:
+        # - wheel: pycolmap (setuptools-based) needs bdist_wheel command
+        # - clang/clang++: fused-ssim, fused-bilagrid, ppisp CUDA extensions
+        subprocess.run(["pip", "install", "wheel"], check=True)
+        subprocess.run(
+            ["apt-get", "install", "-y", "--no-install-recommends", "clang"],
+            check=True,
+            env={**os.environ, "DEBIAN_FRONTEND": "noninteractive"},
+        )
+        # fused-ssim requires torch at build time; use --no-build-isolation so
+        # the already-installed torch in the image is visible to the build backend.
+        subprocess.run(
+            ["pip", "install", "--no-build-isolation", "-r", "examples/requirements.txt"],
+            check=True,
+            cwd=str(gsplat_dir),
+        )
+    else:
+        print("[gsplat] /tmp/gsplat already exists, skipping clone")
+
+    # --- Run simple_trainer ---
+    # simple_trainer expects {data_dir}/sparse/0/ for COLMAP data and
+    # {data_dir}/images/ (or similar) for source images.
+    # Our layout puts COLMAP under {base}/sfm/sparse/0/ and frames under
+    # {base}/frames/.  We symlink to match simple_trainer's expected layout:
+    #   {base}/sfm/sparse  →  already exists
+    #   {base}/sfm/images  →  symlink to {base}/frames
+    sfm_dir = base / "sfm"
+    images_link = sfm_dir / "images"
+    if not images_link.exists():
+        images_link.symlink_to(base / "frames")
+        print(f"[gsplat] created symlink {images_link} → {base / 'frames'}")
+
+    log_path = out_dir / "train.log"
+    train_cmd = [
+        "python", "examples/simple_trainer.py", "default",
+        "--data_dir", str(sfm_dir),  # simple_trainer looks for sparse/0/ here
+        "--data_factor", "1",
+        "--result_dir", str(out_dir),
+        "--max_steps", str(max_steps),
+        "--save_steps", str(max_steps),
+        "--eval_steps", str(max_steps),
+        "--disable_viewer",
+    ]
+    print(f"[gsplat] running: {' '.join(train_cmd)}")
+    train_t0 = time.time()
+    with open(log_path, "w") as log_f:
+        result = subprocess.run(
+            train_cmd,
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            cwd=str(gsplat_dir),
+        )
+    train_sec = time.time() - train_t0
+    print(f"[gsplat] training finished in {train_sec:.1f}s (returncode={result.returncode})")
+
+    if result.returncode != 0:
+        # Dump last 100 lines of log to help debug
+        with open(log_path) as lf:
+            lines = lf.readlines()
+        print("[gsplat] last 100 lines of train.log:")
+        print("".join(lines[-100:]))
+        raise RuntimeError(f"simple_trainer.py exited with code {result.returncode}")
+
+    # --- Convert .pt checkpoint → standard 3DGS PLY ---
+    # gsplat 1.4.0 simple_trainer saves .pt checkpoints, not PLY files.
+    # We convert the last checkpoint to the standard inria/3DGS PLY format
+    # that downstream tools (splat-transform, viewers) expect.
+    import numpy as np
+    import torch
+    from plyfile import PlyData, PlyElement
+
+    ckpt_candidates = sorted((out_dir / "ckpts").glob("ckpt_*_rank0.pt"))
+    if not ckpt_candidates:
+        raise RuntimeError(f"No .pt checkpoint found under {out_dir / 'ckpts'}")
+    ckpt_path = ckpt_candidates[-1]
+    print(f"[gsplat] converting checkpoint → PLY: {ckpt_path}")
+
+    ckpt = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+    splats = ckpt["splats"]
+
+    means = splats["means"].float().numpy()          # [N, 3]
+    scales = splats["scales"].float().numpy()        # [N, 3] — stored as log(scale)
+    quats = splats["quats"].float().numpy()          # [N, 4]  w,x,y,z or x,y,z,w
+    opacities = splats["opacities"].float().numpy()  # [N,]   — stored as logit
+    sh0 = splats["sh0"].float().numpy()              # [N, 1, 3]
+    shN = splats["shN"].float().numpy()              # [N, K, 3]
+
+    N = means.shape[0]
+    normals = np.zeros((N, 3), dtype=np.float32)
+
+    # SH coefficients: flatten to [N, (1+K)*3] then split into dc/rest
+    sh_all = np.concatenate([sh0, shN], axis=1)  # [N, 1+K, 3]
+    sh_dc = sh_all[:, :1, :]                      # [N, 1, 3]
+    sh_rest = sh_all[:, 1:, :]                    # [N, K, 3]
+
+    # Build PLY vertex data following inria 3DGS convention
+    n_sh_rest = sh_rest.shape[1] * 3
+    dtype_list = (
+        [("x", "f4"), ("y", "f4"), ("z", "f4")]
+        + [("nx", "f4"), ("ny", "f4"), ("nz", "f4")]
+        + [(f"f_dc_{i}", "f4") for i in range(3)]
+        + [(f"f_rest_{i}", "f4") for i in range(n_sh_rest)]
+        + [("opacity", "f4")]
+        + [(f"scale_{i}", "f4") for i in range(3)]
+        + [(f"rot_{i}", "f4") for i in range(4)]
+    )
+    vertex_data = np.empty(N, dtype=dtype_list)
+    vertex_data["x"] = means[:, 0]
+    vertex_data["y"] = means[:, 1]
+    vertex_data["z"] = means[:, 2]
+    vertex_data["nx"] = normals[:, 0]
+    vertex_data["ny"] = normals[:, 1]
+    vertex_data["nz"] = normals[:, 2]
+    vertex_data["f_dc_0"] = sh_dc[:, 0, 0]
+    vertex_data["f_dc_1"] = sh_dc[:, 0, 1]
+    vertex_data["f_dc_2"] = sh_dc[:, 0, 2]
+    sh_rest_flat = sh_rest.reshape(N, -1)  # [N, K*3]
+    for i in range(n_sh_rest):
+        vertex_data[f"f_rest_{i}"] = sh_rest_flat[:, i]
+    vertex_data["opacity"] = opacities
+    for i in range(3):
+        vertex_data[f"scale_{i}"] = scales[:, i]
+    for i in range(4):
+        vertex_data[f"rot_{i}"] = quats[:, i]
+
+    dest_ply = base / "output.ply"
+    ply_el = PlyElement.describe(vertex_data, "vertex")
+    PlyData([ply_el]).write(str(dest_ply))
+    ply_size_bytes = dest_ply.stat().st_size
+    print(f"[gsplat] PLY written: {dest_ply} ({ply_size_bytes} bytes, {N} gaussians)")
+
+    # --- Parse PSNR lines from log tail ---
+    with open(log_path) as lf:
+        all_lines = lf.readlines()
+    tail_lines = all_lines[-200:]
+    psnr_log_tail = [
+        line.rstrip()
+        for line in tail_lines
+        if "psnr" in line.lower() or "PSNR" in line
+    ]
+
+    volume.commit()
+
+    return {
+        "scene": scene_name,
+        "train_sec": round(train_sec, 2),
+        "max_steps": max_steps,
+        "ply_size_bytes": ply_size_bytes,
+        "psnr_log_tail": psnr_log_tail,
+    }
+
+
 @app.local_entrypoint()
-def main(video_path: str = "input/sample.mov", scene_name: str = "sample", fps: int = 2) -> None:
-    """Phase 0 pipeline entry — currently runs SfM only (Tasks 5+ extend this)."""
+def main(
+    video_path: str = "input/sample.mov",
+    scene_name: str = "sample",
+    fps: int = 2,
+    max_steps: int = 30000,
+) -> None:
+    """Phase 0 pipeline entry — SfM → gsplat training."""
     src = Path(video_path)
     assert src.exists(), f"video not found: {src}"
 
@@ -229,5 +440,8 @@ def main(video_path: str = "input/sample.mov", scene_name: str = "sample", fps: 
 
     print(">>> Running SfM step")
     sfm_metrics = prepare_frames_and_sfm.remote(scene_name, dest_filename, fps)
-
     print(json.dumps(sfm_metrics, indent=2, ensure_ascii=False))
+
+    print(f">>> Running gsplat training ({max_steps} steps)")
+    train_metrics = train_gsplat.remote(scene_name, max_steps=max_steps)
+    print(json.dumps(train_metrics, indent=2, ensure_ascii=False))

@@ -1,0 +1,200 @@
+loss=0.087| sh degree=0| :  88%|████████▊ | 882/1000 [04:32<00:03, 36.71it/s]
+loss=0.154| sh degree=0| :  88%|████████▊ | 882/1000 [04:32<00:03, 36.71it/s]
+loss=0.097| sh degree=0| :  88%|████████▊ | 882/1000 [04:32<00:03, 36.71it/s]
+loss=0.097| sh degree=0| :  89%|████████▊ | 886/1000 [04:32<00:03, 35.93it/s]
+loss=0.089| sh degree=0| :  89%|████████▊ | 886/1000 [04:32<00:03, 35.93it/s]
+loss=0.127| sh degree=0| :  89%|████████▊ | 886/1000 [04:33<00:03, 35.93it/s]
+loss=0.104| sh degree=0| :  89%|████████▊ | 886/1000 [04:33<00:03, 35.93it/s]
+loss=0.074| sh degree=0| :  89%|████████▊ | 886/1000 [04:33<00:03, 35.93it/s]
+loss=0.074| sh degree=0| :  89%|████████▉ | 890/1000 [04:33<00:03, 35.99it/s]
+loss=0.098| sh degree=0| :  89%|████████▉ | 890/1000 [04:33<00:03, 35.99it/s]
+loss=0.094| sh degree=0| :  89%|████████▉ | 890/1000 [04:33<00:03, 35.99it/s]
+loss=0.104| sh degree=0| :  89%|████████▉ | 890/1000 [04:33<00:03, 35.99it/s]
+loss=0.071| sh degree=0| :  89%|████████▉ | 890/1000 [04:33<00:03, 35.99it/s]
+loss=0.071| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.073| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.141| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.097| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.139| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.116| sh degree=0| :  89%|████████▉ | 894/1000 [04:33<00:03, 35.09it/s]
+loss=0.116| sh degree=0| :  90%|████████▉ | 899/1000 [04:33<00:02, 36.95it/s]
+loss=0.094| sh degree=0| :  90%|████████▉ | 899/1000 [04:33<00:02, 36.95it/s]
+loss=0.107| sh degree=0| :  90%|████████▉ | 899/1000 [04:33<00:02, 36.95it/s]
+loss=0.154| sh degree=0| :  90%|████████▉ | 899/1000 [04:33<00:02, 36.95it/s]
+loss=0.119| sh degree=0| :  90%|████████▉ | 899/1000 [04:33<00:02, 36.95it/s]
+loss=0.119| sh degree=0| :  90%|█████████ | 903/1000 [04:33<00:03, 26.57it/s]
+loss=0.107| sh degree=0| :  90%|█████████ | 903/1000 [04:33<00:03, 26.57it/s]
+loss=0.098| sh degree=0| :  90%|█████████ | 903/1000 [04:33<00:03, 26.57it/s]
+loss=0.139| sh degree=0| :  90%|█████████ | 903/1000 [04:33<00:03, 26.57it/s]
+loss=0.097| sh degree=0| :  90%|█████████ | 903/1000 [04:33<00:03, 26.57it/s]
+loss=0.097| sh degree=0| :  91%|█████████ | 907/1000 [04:33<00:03, 28.97it/s]
+loss=0.089| sh degree=0| :  91%|█████████ | 907/1000 [04:33<00:03, 28.97it/s]
+loss=0.118| sh degree=0| :  91%|█████████ | 907/1000 [04:33<00:03, 28.97it/s]
+loss=0.116| sh degree=0| :  91%|█████████ | 907/1000 [04:33<00:03, 28.97it/s]
+loss=0.091| sh degree=0| :  91%|█████████ | 907/1000 [04:33<00:03, 28.97it/s]
+loss=0.091| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.101| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.106| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.102| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.097| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.153| sh degree=0| :  91%|█████████ | 911/1000 [04:33<00:02, 31.23it/s]
+loss=0.153| sh degree=0| :  92%|█████████▏| 916/1000 [04:33<00:02, 34.17it/s]
+loss=0.134| sh degree=0| :  92%|█████████▏| 916/1000 [04:33<00:02, 34.17it/s]
+loss=0.106| sh degree=0| :  92%|█████████▏| 916/1000 [04:33<00:02, 34.17it/s]
+loss=0.264| sh degree=0| :  92%|█████████▏| 916/1000 [04:33<00:02, 34.17it/s]
+loss=0.109| sh degree=0| :  92%|█████████▏| 916/1000 [04:33<00:02, 34.17it/s]
+loss=0.134| sh degree=0| :  92%|█████████▏| 916/1000 [04:34<00:02, 34.17it/s]
+loss=0.134| sh degree=0| :  92%|█████████▏| 921/1000 [04:34<00:02, 36.77it/s]
+loss=0.093| sh degree=0| :  92%|█████████▏| 921/1000 [04:34<00:02, 36.77it/s]
+loss=0.122| sh degree=0| :  92%|█████████▏| 921/1000 [04:34<00:02, 36.77it/s]
+loss=0.093| sh degree=0| :  92%|█████████▏| 921/1000 [04:34<00:02, 36.77it/s]
+loss=0.073| sh degree=0| :  92%|█████████▏| 921/1000 [04:34<00:02, 36.77it/s]
+loss=0.073| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.139| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.097| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.160| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.113| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.135| sh degree=0| :  92%|█████████▎| 925/1000 [04:34<00:02, 36.51it/s]
+loss=0.135| sh degree=0| :  93%|█████████▎| 930/1000 [04:34<00:01, 37.65it/s]
+loss=0.098| sh degree=0| :  93%|█████████▎| 930/1000 [04:34<00:01, 37.65it/s]
+loss=0.076| sh degree=0| :  93%|█████████▎| 930/1000 [04:34<00:01, 37.65it/s]
+loss=0.116| sh degree=0| :  93%|█████████▎| 930/1000 [04:34<00:01, 37.65it/s]
+loss=0.105| sh degree=0| :  93%|█████████▎| 930/1000 [04:34<00:01, 37.65it/s]
+loss=0.105| sh degree=0| :  93%|█████████▎| 934/1000 [04:34<00:01, 37.87it/s]
+loss=0.114| sh degree=0| :  93%|█████████▎| 934/1000 [04:34<00:01, 37.87it/s]
+loss=0.121| sh degree=0| :  93%|█████████▎| 934/1000 [04:34<00:01, 37.87it/s]
+loss=0.115| sh degree=0| :  93%|█████████▎| 934/1000 [04:34<00:01, 37.87it/s]
+loss=0.106| sh degree=0| :  93%|█████████▎| 934/1000 [04:34<00:01, 37.87it/s]
+loss=0.106| sh degree=0| :  94%|█████████▍| 938/1000 [04:34<00:01, 38.44it/s]
+loss=0.085| sh degree=0| :  94%|█████████▍| 938/1000 [04:34<00:01, 38.44it/s]
+loss=0.090| sh degree=0| :  94%|█████████▍| 938/1000 [04:34<00:01, 38.44it/s]
+loss=0.071| sh degree=0| :  94%|█████████▍| 938/1000 [04:34<00:01, 38.44it/s]
+loss=0.080| sh degree=0| :  94%|█████████▍| 938/1000 [04:34<00:01, 38.44it/s]
+loss=0.080| sh degree=0| :  94%|█████████▍| 942/1000 [04:34<00:01, 38.27it/s]
+loss=0.100| sh degree=0| :  94%|█████████▍| 942/1000 [04:34<00:01, 38.27it/s]
+loss=0.099| sh degree=0| :  94%|█████████▍| 942/1000 [04:34<00:01, 38.27it/s]
+loss=0.104| sh degree=0| :  94%|█████████▍| 942/1000 [04:34<00:01, 38.27it/s]
+loss=0.078| sh degree=0| :  94%|█████████▍| 942/1000 [04:34<00:01, 38.27it/s]
+loss=0.078| sh degree=0| :  95%|█████████▍| 946/1000 [04:34<00:01, 37.56it/s]
+loss=0.114| sh degree=0| :  95%|█████████▍| 946/1000 [04:34<00:01, 37.56it/s]
+loss=0.091| sh degree=0| :  95%|█████████▍| 946/1000 [04:34<00:01, 37.56it/s]
+loss=0.092| sh degree=0| :  95%|█████████▍| 946/1000 [04:34<00:01, 37.56it/s]
+loss=0.071| sh degree=0| :  95%|█████████▍| 946/1000 [04:34<00:01, 37.56it/s]
+loss=0.071| sh degree=0| :  95%|█████████▌| 950/1000 [04:34<00:01, 37.06it/s]
+loss=0.094| sh degree=0| :  95%|█████████▌| 950/1000 [04:34<00:01, 37.06it/s]
+loss=0.102| sh degree=0| :  95%|█████████▌| 950/1000 [04:34<00:01, 37.06it/s]
+loss=0.111| sh degree=0| :  95%|█████████▌| 950/1000 [04:34<00:01, 37.06it/s]
+loss=0.086| sh degree=0| :  95%|█████████▌| 950/1000 [04:34<00:01, 37.06it/s]
+loss=0.086| sh degree=0| :  95%|█████████▌| 954/1000 [04:34<00:01, 36.66it/s]
+loss=0.126| sh degree=0| :  95%|█████████▌| 954/1000 [04:34<00:01, 36.66it/s]
+loss=0.119| sh degree=0| :  95%|█████████▌| 954/1000 [04:34<00:01, 36.66it/s]
+loss=0.103| sh degree=0| :  95%|█████████▌| 954/1000 [04:34<00:01, 36.66it/s]
+loss=0.097| sh degree=0| :  95%|█████████▌| 954/1000 [04:34<00:01, 36.66it/s]
+loss=0.097| sh degree=0| :  96%|█████████▌| 958/1000 [04:34<00:01, 37.07it/s]
+loss=0.114| sh degree=0| :  96%|█████████▌| 958/1000 [04:35<00:01, 37.07it/s]
+loss=0.103| sh degree=0| :  96%|█████████▌| 958/1000 [04:35<00:01, 37.07it/s]
+loss=0.120| sh degree=0| :  96%|█████████▌| 958/1000 [04:35<00:01, 37.07it/s]
+loss=0.085| sh degree=0| :  96%|█████████▌| 958/1000 [04:35<00:01, 37.07it/s]
+loss=0.085| sh degree=0| :  96%|█████████▌| 962/1000 [04:35<00:01, 35.23it/s]
+loss=0.079| sh degree=0| :  96%|█████████▌| 962/1000 [04:35<00:01, 35.23it/s]
+loss=0.105| sh degree=0| :  96%|█████████▌| 962/1000 [04:35<00:01, 35.23it/s]
+loss=0.106| sh degree=0| :  96%|█████████▌| 962/1000 [04:35<00:01, 35.23it/s]
+loss=0.084| sh degree=0| :  96%|█████████▌| 962/1000 [04:35<00:01, 35.23it/s]
+loss=0.084| sh degree=0| :  97%|█████████▋| 966/1000 [04:35<00:00, 34.82it/s]
+loss=0.097| sh degree=0| :  97%|█████████▋| 966/1000 [04:35<00:00, 34.82it/s]
+loss=0.103| sh degree=0| :  97%|█████████▋| 966/1000 [04:35<00:00, 34.82it/s]
+loss=0.119| sh degree=0| :  97%|█████████▋| 966/1000 [04:35<00:00, 34.82it/s]
+loss=0.085| sh degree=0| :  97%|█████████▋| 966/1000 [04:35<00:00, 34.82it/s]
+loss=0.085| sh degree=0| :  97%|█████████▋| 970/1000 [04:35<00:00, 34.65it/s]
+loss=0.103| sh degree=0| :  97%|█████████▋| 970/1000 [04:35<00:00, 34.65it/s]
+loss=0.100| sh degree=0| :  97%|█████████▋| 970/1000 [04:35<00:00, 34.65it/s]
+loss=0.090| sh degree=0| :  97%|█████████▋| 970/1000 [04:35<00:00, 34.65it/s]
+loss=0.083| sh degree=0| :  97%|█████████▋| 970/1000 [04:35<00:00, 34.65it/s]
+loss=0.083| sh degree=0| :  97%|█████████▋| 974/1000 [04:35<00:00, 34.97it/s]
+loss=0.095| sh degree=0| :  97%|█████████▋| 974/1000 [04:35<00:00, 34.97it/s]
+loss=0.159| sh degree=0| :  97%|█████████▋| 974/1000 [04:35<00:00, 34.97it/s]
+loss=0.097| sh degree=0| :  97%|█████████▋| 974/1000 [04:35<00:00, 34.97it/s]
+loss=0.081| sh degree=0| :  97%|█████████▋| 974/1000 [04:35<00:00, 34.97it/s]
+loss=0.081| sh degree=0| :  98%|█████████▊| 978/1000 [04:35<00:00, 34.35it/s]
+loss=0.092| sh degree=0| :  98%|█████████▊| 978/1000 [04:35<00:00, 34.35it/s]
+loss=0.138| sh degree=0| :  98%|█████████▊| 978/1000 [04:35<00:00, 34.35it/s]
+loss=0.093| sh degree=0| :  98%|█████████▊| 978/1000 [04:35<00:00, 34.35it/s]
+loss=0.129| sh degree=0| :  98%|█████████▊| 978/1000 [04:35<00:00, 34.35it/s]
+loss=0.129| sh degree=0| :  98%|█████████▊| 982/1000 [04:35<00:00, 35.60it/s]
+loss=0.109| sh degree=0| :  98%|█████████▊| 982/1000 [04:35<00:00, 35.60it/s]
+loss=0.090| sh degree=0| :  98%|█████████▊| 982/1000 [04:35<00:00, 35.60it/s]
+loss=0.092| sh degree=0| :  98%|█████████▊| 982/1000 [04:35<00:00, 35.60it/s]
+loss=0.087| sh degree=0| :  98%|█████████▊| 982/1000 [04:35<00:00, 35.60it/s]
+loss=0.087| sh degree=0| :  99%|█████████▊| 986/1000 [04:35<00:00, 36.22it/s]
+loss=0.137| sh degree=0| :  99%|█████████▊| 986/1000 [04:35<00:00, 36.22it/s]
+loss=0.086| sh degree=0| :  99%|█████████▊| 986/1000 [04:35<00:00, 36.22it/s]
+loss=0.083| sh degree=0| :  99%|█████████▊| 986/1000 [04:35<00:00, 36.22it/s]
+loss=0.111| sh degree=0| :  99%|█████████▊| 986/1000 [04:35<00:00, 36.22it/s]
+loss=0.111| sh degree=0| :  99%|█████████▉| 990/1000 [04:35<00:00, 37.12it/s]
+loss=0.062| sh degree=0| :  99%|█████████▉| 990/1000 [04:35<00:00, 37.12it/s]
+loss=0.156| sh degree=0| :  99%|█████████▉| 990/1000 [04:35<00:00, 37.12it/s]
+loss=0.107| sh degree=0| :  99%|█████████▉| 990/1000 [04:35<00:00, 37.12it/s]
+loss=0.086| sh degree=0| :  99%|█████████▉| 990/1000 [04:36<00:00, 37.12it/s]
+loss=0.086| sh degree=0| :  99%|█████████▉| 994/1000 [04:36<00:00, 37.59it/s]
+loss=0.075| sh degree=0| :  99%|█████████▉| 994/1000 [04:36<00:00, 37.59it/s]
+loss=0.125| sh degree=0| :  99%|█████████▉| 994/1000 [04:36<00:00, 37.59it/s]
+loss=0.117| sh degree=0| :  99%|█████████▉| 994/1000 [04:36<00:00, 37.59it/s]
+loss=0.117| sh degree=0| :  99%|█████████▉| 994/1000 [04:36<00:00, 37.59it/s]
+loss=0.117| sh degree=0| : 100%|█████████▉| 998/1000 [04:36<00:00, 38.26it/s]
+loss=0.128| sh degree=0| : 100%|█████████▉| 998/1000 [04:36<00:00, 38.26it/s]
+loss=0.142| sh degree=0| : 100%|█████████▉| 998/1000 [04:36<00:00, 38.26it/s]Step 600: 1495 GSs duplicated, 1769 GSs split. Now having 33683 GSs.
+Step 600: 1608 GSs pruned. Now having 32075 GSs.
+Step 700: 3917 GSs duplicated, 3751 GSs split. Now having 39743 GSs.
+Step 700: 193 GSs pruned. Now having 39550 GSs.
+Step 800: 5038 GSs duplicated, 4872 GSs split. Now having 49460 GSs.
+Step 800: 164 GSs pruned. Now having 49296 GSs.
+Step 900: 5955 GSs duplicated, 5937 GSs split. Now having 61188 GSs.
+Step 900: 182 GSs pruned. Now having 61006 GSs.
+Step:  999 {'mem': 0.4081263542175293, 'ellipse_time': 276.15656661987305, 'num_GS': 61006}
+Running evaluation...
+
+loss=0.142| sh degree=0| : 100%|█████████▉| 999/1000 [04:43<00:00,  3.52it/s]
+Traceback (most recent call last):
+  File "/tmp/gsplat/examples/simple_trainer.py", line 1068, in <module>
+    cli(main, cfg, verbose=True)
+  File "/usr/local/lib/python3.11/site-packages/gsplat/distributed.py", line 360, in cli
+    return _distributed_worker(0, 1, fn=fn, args=args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/gsplat/distributed.py", line 295, in _distributed_worker
+    fn(local_rank, world_rank, world_size, args)
+  File "/tmp/gsplat/examples/simple_trainer.py", line 1013, in main
+    runner.train()
+  File "/tmp/gsplat/examples/simple_trainer.py", line 781, in train
+    self.eval(step)
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/gsplat/examples/simple_trainer.py", line 850, in eval
+    metrics["ssim"].append(self.ssim(colors_p, pixels_p))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/metric.py", line 315, in forward
+    self._forward_cache = self._forward_reduce_state_update(*args, **kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/metric.py", line 384, in _forward_reduce_state_update
+    self.update(*args, **kwargs)
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/metric.py", line 549, in wrapped_func
+    update(*args, **kwargs)
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/image/ssim.py", line 132, in update
+    similarity_pack = _ssim_update(
+                      ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/functional/image/ssim.py", line 145, in _ssim_update
+    kernel = _gaussian_kernel_2d(channel, gauss_kernel_size, sigma, dtype, device)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/functional/image/utils.py", line 53, in _gaussian_kernel_2d
+    gaussian_kernel_x = _gaussian(kernel_size[0], sigma[0], dtype, device)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/torchmetrics/functional/image/utils.py", line 24, in _gaussian
+    gauss = torch.exp(-torch.pow(dist / sigma, 2) / 2)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
