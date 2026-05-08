@@ -325,12 +325,12 @@ def prepare_frames_and_sfm(scene_name: str, fps: int = 2) -> dict:
         "--database_path", str(db),
         "--image_path", str(frames),
         "--ImageReader.single_camera", "1",
-        "--SiftExtraction.use_gpu", "1",
+        "--SiftExtraction.use_gpu", "0",
     ])
     subprocess.check_call([
-        "colmap", "exhaustive_matcher",
+        "colmap", "sequential_matcher",
         "--database_path", str(db),
-        "--SiftMatching.use_gpu", "1",
+        "--SiftMatching.use_gpu", "0",
     ])
 
     # 3) Mapper（COLMAP 3.9 以降なら mapper の global mode を試行）
@@ -358,6 +358,9 @@ def prepare_frames_and_sfm(scene_name: str, fps: int = 2) -> dict:
     volume.commit()
     return metrics
 ```
+
+> **実装メモ:** Modal の headless container では OpenGL context が無いため GPU SIFT は使えない。
+> 動画シーケンスには `sequential_matcher` が適切（`exhaustive_matcher` は無秩序写真集向け）。
 
 - [ ] **Step 2: トップレベルに local_entrypoint を追加（Step 7 で完成版に置き換える）**
 
@@ -392,7 +395,7 @@ Expected:
 
 **失敗パターンと対処:**
 - COLMAP が `not enough features` で失敗 → 動画が短すぎる or テクスチャが少ない。FPS を上げて再実行
-- `cuda runtime error` → image の CUDA バージョンと Modal の GPU ドライバが噛み合っていない。`12.1.0` を `11.8.0` などに変更
+- `cuda runtime error` → image の CUDA バージョンと Modal の GPU ドライバが噛み合っていない。`12.4.1` を `11.8.0` などに変更（SIFT は CPU 動作なので CUDA は gsplat 学習専用）
 
 - [ ] **Step 4: コミット**
 

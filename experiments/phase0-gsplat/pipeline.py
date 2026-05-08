@@ -4,13 +4,16 @@ Phase 0 PoC: video → 3D Gaussian Splatting pipeline on Modal.
 Reads a video from local, uploads to a Modal Volume, runs the full pipeline
 on GPU, and downloads the resulting PLY/SPZ + metrics back to local.
 
-This file is grown task-by-task per the plan at
+Grown task-by-task per the plan at
 docs/superpowers/plans/2026-05-08-gsplat-pipeline-phase-0.md
-Task 3 only adds the Image and Volume definitions plus a tiny smoke-test
-function used to force the image build during this task.
+- Task 3: Image, Volume, smoke_test
+- Task 4: prepare_frames_and_sfm (ffmpeg + COLMAP)
+- Task 5+: extends with gsplat training, SPZ conversion, downloads
 """
 from __future__ import annotations
 import json
+import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -103,8 +106,6 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
 
     Returns a dict of metrics (timings, frame count, COLMAP analyzer output).
     """
-    import subprocess
-
     base = Path("/workspace") / scene_name
     video = base / video_filename
     assert video.exists(), f"video not found: {video}"
@@ -129,13 +130,13 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
     )
     frame_extract_sec = time.time() - t0
     frames_count = len(list(frames_dir.glob("frame_*.jpg")))
+    assert frames_count > 0, f"ffmpeg produced no frames for {video}"
     print(f"[frames] extracted {frames_count} frames in {frame_extract_sec:.1f}s")
 
     # --- COLMAP SfM ---
     # NOTE: COLMAP's GPU SIFT path requires an OpenGL context which is not
     # available in Modal's headless GPU containers. Fall back to CPU SIFT
     # (use_gpu=0). The GPU is still used by gsplat training in later tasks.
-    import os
     colmap_env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
 
     sfm_t0 = time.time()
@@ -179,9 +180,11 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
         env=colmap_env,
     )
     sfm_sec = time.time() - sfm_t0
-    print(f"[colmap] mapper done in {sfm_sec:.1f}s total SfM time")
+    print(f"[colmap] SfM done (feature_extractor + matcher + mapper) in {sfm_sec:.1f}s")
 
     # Verify outputs
+    # COLMAP numbers sub-models 0, 1, … in descending size order. We always pick "0".
+    # If the scene splits into multiple models, sub-models 1+ are silently ignored here.
     cameras_bin = sparse_dir / "0" / "cameras.bin"
     images_bin = sparse_dir / "0" / "images.bin"
     assert cameras_bin.exists(), f"cameras.bin not found: {cameras_bin}"
@@ -192,8 +195,10 @@ def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -
         ["colmap", "model_analyzer", "--path", str(sparse_dir / "0")],
         capture_output=True,
         text=True,
+        check=True,
         env=colmap_env,
     )
+    # Last 2000 chars: COLMAP's analyzer prints the Cameras/Images/Points summary at the end.
     colmap_analyzer_output = (analyzer_result.stdout + analyzer_result.stderr)[-2000:]
     print("[colmap] model_analyzer output:")
     print(colmap_analyzer_output)
