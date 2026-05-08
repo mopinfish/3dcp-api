@@ -5,16 +5,19 @@
 ## セットアップ
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-modal token new      # Modal アカウントの API トークン設定
+# uv で venv 作成 + 依存インストール
+uv venv
+uv pip install -r requirements.txt
+
+# Modal アカウントの API トークン設定（初回のみ）
+uv run modal token new
 ```
 
 ## 実行
 
 ```bash
 # 動画を input/ に配置してから
-modal run pipeline.py --video-path input/sample.mp4 --scene-name sample
+uv run modal run pipeline.py --video-path input/sample.mp4 --scene-name sample
 ```
 
 成果物は `output/` に PLY と SPZ で出力される。
