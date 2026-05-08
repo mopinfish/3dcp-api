@@ -10,7 +10,9 @@ Task 3 only adds the Image and Volume definitions plus a tiny smoke-test
 function used to force the image build during this task.
 """
 from __future__ import annotations
+import json
 import time
+from pathlib import Path
 
 import modal
 
@@ -89,10 +91,138 @@ def smoke_test() -> str:
     return json.dumps(info)
 
 
+@app.function(
+    image=image,
+    gpu=GPU_TYPE,
+    timeout=TIMEOUT_S,
+    volumes={"/workspace": volume},
+)
+def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -> dict:
+    """Extract frames from /workspace/{scene_name}/{video_filename} via ffmpeg,
+    then run COLMAP feature extraction + matching + sparse reconstruction.
+
+    Returns a dict of metrics (timings, frame count, COLMAP analyzer output).
+    """
+    import subprocess
+
+    base = Path("/workspace") / scene_name
+    video = base / video_filename
+    assert video.exists(), f"video not found: {video}"
+
+    frames_dir = base / "frames"
+    sfm_dir = base / "sfm"
+    sparse_dir = sfm_dir / "sparse"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    sfm_dir.mkdir(parents=True, exist_ok=True)
+    sparse_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- Frame extraction ---
+    t0 = time.time()
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-i", str(video),
+            "-vf", f"fps={fps}",
+            "-qscale:v", "2",
+            str(frames_dir / "frame_%05d.jpg"),
+        ],
+        check=True,
+    )
+    frame_extract_sec = time.time() - t0
+    frames_count = len(list(frames_dir.glob("frame_*.jpg")))
+    print(f"[frames] extracted {frames_count} frames in {frame_extract_sec:.1f}s")
+
+    # --- COLMAP SfM ---
+    # NOTE: COLMAP's GPU SIFT path requires an OpenGL context which is not
+    # available in Modal's headless GPU containers. Fall back to CPU SIFT
+    # (use_gpu=0). The GPU is still used by gsplat training in later tasks.
+    import os
+    colmap_env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+
+    sfm_t0 = time.time()
+
+    # Feature extraction (CPU SIFT — no OpenGL context available in container)
+    subprocess.run(
+        [
+            "colmap", "feature_extractor",
+            "--database_path", str(sfm_dir / "database.db"),
+            "--image_path", str(frames_dir),
+            "--ImageReader.single_camera", "1",
+            "--SiftExtraction.use_gpu", "0",
+        ],
+        check=True,
+        env=colmap_env,
+    )
+    print("[colmap] feature_extractor done")
+
+    # Sequential matching (CPU SIFT) — appropriate for video frames (temporal order).
+    # Exhaustive matching was too slow for 135 frames (9 blocks × ~100s each).
+    subprocess.run(
+        [
+            "colmap", "sequential_matcher",
+            "--database_path", str(sfm_dir / "database.db"),
+            "--SiftMatching.use_gpu", "0",
+        ],
+        check=True,
+        env=colmap_env,
+    )
+    print("[colmap] sequential_matcher done")
+
+    # Mapper
+    subprocess.run(
+        [
+            "colmap", "mapper",
+            "--database_path", str(sfm_dir / "database.db"),
+            "--image_path", str(frames_dir),
+            "--output_path", str(sparse_dir),
+        ],
+        check=True,
+        env=colmap_env,
+    )
+    sfm_sec = time.time() - sfm_t0
+    print(f"[colmap] mapper done in {sfm_sec:.1f}s total SfM time")
+
+    # Verify outputs
+    cameras_bin = sparse_dir / "0" / "cameras.bin"
+    images_bin = sparse_dir / "0" / "images.bin"
+    assert cameras_bin.exists(), f"cameras.bin not found: {cameras_bin}"
+    assert images_bin.exists(), f"images.bin not found: {images_bin}"
+
+    # Model analyzer
+    analyzer_result = subprocess.run(
+        ["colmap", "model_analyzer", "--path", str(sparse_dir / "0")],
+        capture_output=True,
+        text=True,
+        env=colmap_env,
+    )
+    colmap_analyzer_output = (analyzer_result.stdout + analyzer_result.stderr)[-2000:]
+    print("[colmap] model_analyzer output:")
+    print(colmap_analyzer_output)
+
+    volume.commit()
+
+    return {
+        "scene_name": scene_name,
+        "video_filename": video_filename,
+        "fps": fps,
+        "frames_count": frames_count,
+        "frame_extract_sec": round(frame_extract_sec, 2),
+        "sfm_sec": round(sfm_sec, 2),
+        "colmap_analyzer_output": colmap_analyzer_output,
+    }
+
+
 @app.local_entrypoint()
-def main() -> None:
-    """Build/verify the image. Replaced in later tasks with real pipeline."""
-    import json
-    result_json = smoke_test.remote()
-    result = json.loads(result_json)
-    print(result)
+def main(video_path: str = "input/sample.mov", scene_name: str = "sample", fps: int = 2) -> None:
+    """Phase 0 pipeline entry — currently runs SfM only (Tasks 5+ extend this)."""
+    src = Path(video_path)
+    assert src.exists(), f"video not found: {src}"
+
+    dest_filename = f"input{src.suffix}"
+    print(f">>> Uploading {src} as {scene_name}/{dest_filename}")
+    with volume.batch_upload(force=True) as batch:
+        batch.put_file(src, f"{scene_name}/{dest_filename}")
+
+    print(">>> Running SfM step")
+    sfm_metrics = prepare_frames_and_sfm.remote(scene_name, dest_filename, fps)
+
+    print(json.dumps(sfm_metrics, indent=2, ensure_ascii=False))

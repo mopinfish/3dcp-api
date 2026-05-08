@@ -1,0 +1,200 @@
+
+
+Bundle adjustment report
+------------------------
+    Residuals : 465846
+   Parameters : 91951
+   Iterations : 26
+         Time : 8.89254 [s]
+ Initial cost : 0.618343 [px]
+   Final cost : 0.616378 [px]
+  Termination : Convergence
+
+  => Completed observations: 133
+  => Merged observations: 12
+  => Filtered observations: 10
+  => Changed observations: 0.000665
+
+==============================================================================
+Global bundle adjustment
+==============================================================================
+
+iter      cost      cost_change  |gradient|   |step|    tr_ratio  tr_radius  ls_iter  iter_time  total_time
+   0  1.774238e+05    0.00e+00    8.92e+03   0.00e+00   0.00e+00  1.00e+04        0    7.01e-02    6.93e-01
+
+CHOLMOD version 3.0.14, Oct 22, 2019: Symbolic Analysis: status: OK
+  Architecture: Linux
+    sizeof(int):      4
+    sizeof(SuiteSparse_long):  8
+    sizeof(void *):   8
+    sizeof(double):   8
+    sizeof(Int):      4 (CHOLMOD's basic integer)
+    sizeof(BLAS_INT): 4 (integer used in the BLAS)
+  Results from most recent analysis:
+    Cholesky flop count: 9.9457e+07
+    Nonzeros in L:       2.2687e+05
+  memory blocks in use:          11
+  memory in use (MB):           0.0
+  peak memory usage (MB):       0.9
+  maxrank:    update/downdate rank:   8
+  supernodal control: 1 40 (supernodal if flops/lnz >= 40)
+  nmethods:   number of ordering methods to try: 1
+    method 0: natural
+        flop count: 9.9457e+07
+        nnz(L):     2.2687e+05
+  OK
+   1  1.771991e+05    2.25e+02    4.59e+01   8.88e-01   1.00e+00  3.00e+04        1    7.93e-01    1.49e+00
+   2  1.771989e+05    2.89e-01    1.12e+01   1.52e-01   1.26e+00  9.00e+04        1    3.12e-01    1.80e+00
+   3  1.771988e+05    8.51e-02    3.85e+00   8.22e-02   1.50e+00  2.70e+05        1    3.04e-01    2.10e+00
+   4  1.771987e+05    3.18e-02    3.22e+00   3.46e-02   1.58e+00  8.10e+05        1    2.91e-01    2.39e+00
+   5  1.771987e+05    1.22e-02    1.29e+00   9.94e-03   1.59e+00  2.43e+06        1    2.92e-01    2.68e+00
+   6  1.771987e+05    4.64e-03    1.70e+00   7.00e-03   1.58e+00  7.29e+06        1    3.10e-01    2.99e+00
+   7  1.771987e+05    1.74e-03    9.64e-01   3.16e-03   1.57e+00  2.19e+07        1    2.89e-01    3.28e+00
+
+
+Bundle adjustment report
+------------------------
+    Residuals : 466092
+   Parameters : 91948
+   Iterations : 8
+         Time : 3.29474 [s]
+ Initial cost : 0.616979 [px]
+   Final cost : 0.616587 [px]
+  Termination : Convergence
+
+  => Completed observations: 14
+  => Merged observations: 0
+  => Filtered observations: 6
+  => Changed observations: 0.000086
+  => Filtered images: 0
+
+==============================================================================
+Registering image #127 (116)
+==============================================================================
+
+  => Image sees 91 / 816 points
+  => Could not register, trying another image.
+
+==============================================================================
+Registering image #126 (116)
+==============================================================================
+
+  => Image sees 56 / 527 points
+  => Could not register, trying another image.
+
+==============================================================================
+Registering image #133 (116)
+==============================================================================
+
+  => Image sees 49 / 246 points
+  => Could not register, trying another image.
+
+==============================================================================
+Registering image #129 (116)
+==============================================================================
+
+  => Image sees 41 / 697 points
+  => Could not register, trying another image.
+
+==============================================================================
+Registering image #116 (116)
+==============================================================================
+
+  => Image sees 41 / 194 points
+  => Could not register, trying another image.
+
+==============================================================================
+Registering image #3 (116)
+==============================================================================
+
+  => Image sees 35 / 89 points
+  => Could not register, trying another image.
+
+==============================================================================
+Retriangulation
+==============================================================================
+
+  => Completed observations: 5
+  => Merged observations: 0
+  => Retriangulated observations: 8
+
+==============================================================================
+Global bundle adjustment
+==============================================================================
+
+iter      cost      cost_change  |gradient|   |step|    tr_ratio  tr_radius  ls_iter  iter_time  total_time
+   0  1.776176e+05    0.00e+00    4.41e+03   0.00e+00   0.00e+00  1.00e+04        0    9.12e-02    7.75e-01
+
+CHOLMOD version 3.0.14, Oct 22, 2019: Symbolic Analysis: status: OK
+  Architecture: Linux
+    sizeof(int):      4
+    sizeof(SuiteSparse_long):  8
+    sizeof(void *):   8
+    sizeof(double):   8
+    sizeof(Int):      4 (CHOLMOD's basic integer)
+    sizeof(BLAS_INT): 4 (integer used in the BLAS)
+  Results from most recent analysis:
+    Cholesky flop count: 9.9831e+07
+    Nonzeros in L:       2.2734e+05
+  memory blocks in use:          11
+  memory in use (MB):           0.0
+  peak memory usage (MB):       0.9
+  maxrank:    update/downdate rank:   8
+  supernodal control: 1 40 (supernodal if flops/lnz >= 40)
+  nmethods:   number of ordering methods to try: 1
+    method 0: natural
+        flop count: 9.9831e+07
+        nnz(L):     2.2734e+05
+  OK
+   1  1.774716e+05    1.46e+02    5.04e+01   8.80e-01   9.98e-01  3.00e+04        1    7.95e-01    1.57e+00
+   2  1.774716e+05    7.01e-02    3.39e+00   1.27e-01   1.01e+00  9.00e+04        1    3.06e-01    1.88e+00
+   3  1.774716e+05    1.42e-03    2.14e+00   8.35e-02   1.04e+00  2.70e+05        1    3.37e-01    2.21e+00
+   4  1.774716e+05    1.71e-04    5.70e-01   3.17e-02   1.11e+00  8.10e+05        1    3.06e-01    2.52e+00
+
+
+Bundle adjustment report
+------------------------
+    Residuals : 466134
+   Parameters : 91951
+   Iterations : 5
+         Time : 2.5362 [s]
+ Initial cost : 0.617288 [px]
+   Final cost : 0.617034 [px]
+  Termination : Convergence
+
+  => Completed observations: 5
+  => Merged observations: 64
+  => Filtered observations: 12
+  => Changed observations: 0.000348
+  => Filtered images: 0
+
+==============================================================================
+Finding good initial image pair
+==============================================================================
+
+  => No good initial image pair found.
+
+Elapsed time: 3.322 [minutes]
+[colmap] mapper done in 245.3s total SfM time
+[colmap] model_analyzer output:
+Cameras: 1
+Images: 115
+Registered images: 115
+Points: 30419
+Observations: 233060
+Mean track length: 7.661659
+Mean observations per image: 2026.608696
+Mean reprojection error: 0.913442px
+
+{
+  "scene_name": "sample",
+  "video_filename": "input.mov",
+  "fps": 2,
+  "frames_count": 135,
+  "frame_extract_sec": 4.19,
+  "sfm_sec": 245.27,
+  "colmap_analyzer_output": "Cameras: 1\nImages: 115\nRegistered images: 115\nPoints: 30419\nObservations: 233060\nMean track length: 7.661659\nMean observations per image: 2026.608696\nMean reprojection error: 0.913442px\n"
+}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/mopinfish/main/ap-K7i4WBpYKa1jUzwozqkTW0

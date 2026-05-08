@@ -1,0 +1,9 @@
+{
+  "scene_name": "sample",
+  "video_filename": "input.mov",
+  "fps": 2,
+  "frames_count": 135,
+  "frame_extract_sec": 4.19,
+  "sfm_sec": 245.27,
+  "colmap_analyzer_output": "Cameras: 1\nImages: 115\nRegistered images: 115\nPoints: 30419\nObservations: 233060\nMean track length: 7.661659\nMean observations per image: 2026.608696\nMean reprojection error: 0.913442px\n"
+}
