@@ -76,7 +76,8 @@ image = (
         "pip install --no-build-isolation -r /opt/gsplat/examples/requirements.txt",
     )
     .run_commands(
-        "npm install -g @playcanvas/splat-transform",
+        # spz-js: PLY → SPZ 変換ライブラリ（@playcanvas/splat-transform は SPZ 出力非対応）
+        "npm install -g spz-js",
     )
 )
 
@@ -90,7 +91,7 @@ def smoke_test() -> str:
     import shutil
     import subprocess
     info: dict = {"ok": True}
-    for tool in ["ffmpeg", "colmap", "node", "splat-transform"]:
+    for tool in ["ffmpeg", "colmap", "node"]:
         info[tool] = shutil.which(tool)
     info["python"] = subprocess.check_output(["python", "--version"], text=True).strip()
     try:
@@ -426,26 +427,106 @@ def _checkpoint_to_ply(ckpt_path: Path, dest_path: Path) -> int:
     return ply_size_bytes
 
 
+@app.function(
+    image=image,
+    # No gpu= — splat-transform は Node CLI で CPU のみ
+    timeout=600,
+    volumes={"/workspace": volume},
+)
+def convert_to_spz(scene_name: str) -> dict:
+    """PLY → SPZ 変換。CPU-only — spz-js (npm) を Node.js で実行。"""
+    import subprocess
+    import textwrap
+    from pathlib import Path
+
+    base = Path("/workspace") / scene_name
+    ply = base / "output.ply"
+    spz = base / "output.spz"
+    assert ply.exists(), f"PLY not found at {ply} — did train_gsplat produce it?"
+
+    # spz-js はライブラリのみ（CLI なし）— インライン Node スクリプトで変換する
+    node_script = textwrap.dedent(f"""\
+        import {{ createReadStream }} from 'fs';
+        import {{ Readable }} from 'stream';
+        import {{ writeFileSync }} from 'fs';
+        import {{ loadPly, serializeSpz }} from 'spz-js';
+        const fileStream = createReadStream('{ply}');
+        const webStream = Readable.toWeb(fileStream);
+        const gs = await loadPly(webStream);
+        const spzData = await serializeSpz(gs);
+        writeFileSync('{spz}', Buffer.from(spzData));
+        console.log('spz written, bytes:', spzData.byteLength);
+    """)
+    subprocess.run(
+        ["node", "--input-type=module"],
+        input=node_script,
+        text=True,
+        check=True,
+    )
+
+    metrics = {
+        "scene": scene_name,
+        "ply_size_bytes": ply.stat().st_size,
+        "spz_size_bytes": spz.stat().st_size,
+        "compression_ratio": round(ply.stat().st_size / max(spz.stat().st_size, 1), 2),
+    }
+    volume.commit()
+    return metrics
+
+
+@app.function(volumes={"/workspace": volume}, timeout=600)
+def download_artifacts(scene_name: str) -> dict[str, bytes]:
+    """成果物 (PLY/SPZ) をバイト列として返す。local entrypoint 側でファイルに書き出す。"""
+    from pathlib import Path
+    base = Path("/workspace") / scene_name
+    artifacts: dict[str, bytes] = {}
+    for name in ("output.ply", "output.spz"):
+        path = base / name
+        if path.exists():
+            artifacts[name] = path.read_bytes()
+    return artifacts
+
+
 @app.local_entrypoint()
-def main(
-    video_path: str = "input/sample.mov",
-    scene_name: str = "sample",
-    fps: int = 2,
-    max_steps: int = 30000,
-) -> None:
-    """Phase 0 pipeline entry — SfM → gsplat training."""
+def main(video_path: str = "input/sample.mov", scene_name: str = "sample", fps: int = 2, max_steps: int = 30000) -> None:
     src = Path(video_path)
     assert src.exists(), f"video not found: {src}"
+
+    out_local = Path("output") / scene_name
+    out_local.mkdir(parents=True, exist_ok=True)
 
     dest_filename = f"input{src.suffix}"
     print(f">>> Uploading {src} as {scene_name}/{dest_filename}")
     with volume.batch_upload(force=True) as batch:
         batch.put_file(src, f"{scene_name}/{dest_filename}")
 
-    print(">>> Running SfM step")
-    sfm_metrics = prepare_frames_and_sfm.remote(scene_name, dest_filename, fps)
-    print(json.dumps(sfm_metrics, indent=2, ensure_ascii=False))
+    started_at = time.time()
+    all_metrics: dict = {"scene": scene_name, "started_at": started_at}
 
-    print(f">>> Running gsplat training ({max_steps} steps)")
-    train_metrics = train_gsplat.remote(scene_name, max_steps=max_steps)
-    print(json.dumps(train_metrics, indent=2, ensure_ascii=False))
+    print(">>> SfM step")
+    all_metrics["sfm"] = prepare_frames_and_sfm.remote(scene_name, dest_filename, fps)
+    print(json.dumps(all_metrics["sfm"], indent=2, ensure_ascii=False))
+
+    print(f">>> gsplat training ({max_steps} steps)")
+    all_metrics["train"] = train_gsplat.remote(scene_name, max_steps=max_steps)
+    print(json.dumps(all_metrics["train"], indent=2, ensure_ascii=False))
+
+    print(">>> SPZ conversion")
+    all_metrics["convert"] = convert_to_spz.remote(scene_name)
+    print(json.dumps(all_metrics["convert"], indent=2, ensure_ascii=False))
+
+    print(">>> Downloading artifacts")
+    artifacts = download_artifacts.remote(scene_name)
+    for name, data in artifacts.items():
+        target = out_local / name
+        target.write_bytes(data)
+        print(f"  wrote {target} ({len(data):,} bytes)")
+
+    finished_at = time.time()
+    all_metrics["finished_at"] = finished_at
+    all_metrics["total_sec"] = round(finished_at - started_at, 1)
+
+    metrics_local = Path("metrics") / f"run-{scene_name}-{int(finished_at)}.json"
+    metrics_local.write_text(json.dumps(all_metrics, indent=2, ensure_ascii=False))
+    print(f"\nWrote metrics: {metrics_local}")
+    print(f"Wrote artifacts to: {out_local}")

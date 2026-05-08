@@ -1,0 +1,11 @@
+{
+  "scene": "sample",
+  "max_steps_at_train": 1000,
+  "ply_size_bytes": 15131018,
+  "spz_size_bytes": 973980,
+  "compression_ratio": 15.54,
+  "splat_transform_version": "spz-js@1.2.5 (note: @playcanvas/splat-transform v2.0.6 was attempted first but does not support SPZ output; spz-js used instead)",
+  "node_version": "v22.6.0",
+  "converted_locally": true,
+  "note": "Local conversion — Modal billing limit prevented running convert_to_spz on Modal. The function is added to pipeline.py for future Task 7 runs. spz-js was used via a custom ply_to_spz.mjs script since it has no CLI. pipeline.py convert_to_spz function uses node --input-type=module with an inline ESM script."
+}
