@@ -20,5 +20,7 @@ uv run modal token new
 uv run modal run pipeline.py --video-path input/sample.mp4 --scene-name sample
 ```
 
+> Phase 0 進行中：上記の `--video-path` / `--scene-name` オプションは Task 4 以降で `main()` に追加されます。Task 3 完了時点では `uv run modal run pipeline.py` (引数なし) で smoke test が走ります。
+
 成果物は `output/` に PLY と SPZ で出力される。
 計測結果は `metrics/run-{timestamp}.json` に記録される。

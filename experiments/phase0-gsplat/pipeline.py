@@ -24,7 +24,7 @@ volume = modal.Volume.from_name(VOLUME_NAME, create_if_missing=True)
 
 image = (
     modal.Image.from_registry(
-        "nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04",
+        "nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04",
         add_python="3.11",
     )
     .apt_install(
@@ -66,23 +66,33 @@ image = (
 
 
 @app.function(image=image, timeout=120)
-def smoke_test() -> dict:
+def smoke_test() -> str:
     """Trivial function to force the image to build during Task 3.
-    Verifies that key tools are installed inside the image."""
+    Verifies that key tools are installed inside the image.
+    Returns a JSON string to avoid cloudpickle needing torch locally."""
+    import json
     import shutil
     import subprocess
     info: dict = {"ok": True}
     for tool in ["ffmpeg", "colmap", "node", "splat-transform"]:
         info[tool] = shutil.which(tool)
-    info["python"] = subprocess.check_output(
-        ["python", "--version"], text=True
-    ).strip()
+    info["python"] = subprocess.check_output(["python", "--version"], text=True).strip()
+    try:
+        import torch
+        info["torch_version"] = str(torch.__version__)
+        info["torch_cuda_compiled_version"] = str(torch.version.cuda)
+        # Note: smoke_test runs without a GPU attached, so cuda.is_available() will be False.
+        # We only check the torch build sees a CUDA runtime version.
+    except Exception as exc:
+        info["torch_error"] = repr(exc)
     info["timestamp"] = int(time.time())
-    return info
+    return json.dumps(info)
 
 
 @app.local_entrypoint()
 def main() -> None:
     """Build/verify the image. Replaced in later tasks with real pipeline."""
-    result = smoke_test.remote()
+    import json
+    result_json = smoke_test.remote()
+    result = json.loads(result_json)
     print(result)
