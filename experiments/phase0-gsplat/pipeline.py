@@ -36,6 +36,8 @@ image = (
         "git", "wget", "build-essential", "cmake",
         "ffmpeg",
         "colmap",
+        # clang/clang++ needed by fused-ssim / fused-bilagrid CUDA extension builds
+        "clang",
         # NOTE: nodejs/npm from Ubuntu 22.04 apt gives Node v12 which is too
         # old for @playcanvas/splat-transform (requires Node >=18). We install
         # Node 20 LTS via NodeSource below instead.
@@ -60,9 +62,18 @@ image = (
         "plyfile",
         "scikit-image",
         "scipy",
+        # wheel: pycolmap (setuptools-based) needs bdist_wheel at install time
+        "wheel",
     )
     .pip_install(
         "gsplat==1.4.0",
+    )
+    .run_commands(
+        # Pre-clone gsplat repo + install examples deps at image build time
+        # so they are cached across container starts (saves ~3-5 min/run on A10G).
+        "git clone --depth 1 --branch v1.4.0 "
+        "https://github.com/nerfstudio-project/gsplat.git /opt/gsplat",
+        "pip install --no-build-isolation -r /opt/gsplat/examples/requirements.txt",
     )
     .run_commands(
         "npm install -g @playcanvas/splat-transform",
@@ -96,13 +107,15 @@ def smoke_test() -> str:
 
 @app.function(
     image=image,
-    gpu=GPU_TYPE,
+    # No gpu= — this function uses CPU SIFT and ffmpeg only
     timeout=TIMEOUT_S,
     volumes={"/workspace": volume},
 )
 def prepare_frames_and_sfm(scene_name: str, video_filename: str, fps: int = 2) -> dict:
-    """Extract frames from /workspace/{scene_name}/{video_filename} via ffmpeg,
-    then run COLMAP feature extraction + matching + sparse reconstruction.
+    """Extract frames + run COLMAP SfM. CPU-only (no GPU SIFT in headless Modal containers).
+
+    Reads /workspace/{scene_name}/{video_filename} via ffmpeg,
+    then runs COLMAP feature extraction + matching + sparse reconstruction.
 
     Returns a dict of metrics (timings, frame count, COLMAP analyzer output).
     """
@@ -244,8 +257,6 @@ def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
     出力: /workspace/{scene_name}/output.ply
     返り値: 計測値 dict（プリミティブ型のみ）。
     """
-    import shutil
-
     base = Path("/workspace") / scene_name
 
     # Verify SfM outputs exist
@@ -257,37 +268,10 @@ def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
     out_dir = base / "gsplat_out"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # --- Clone gsplat repo (idempotent) ---
-    gsplat_dir = Path("/tmp/gsplat")
-    if not gsplat_dir.exists():
-        print("[gsplat] cloning gsplat repo v1.4.0 (shallow)...")
-        # Clone the v1.4.0 tag to match the installed gsplat==1.4.0 package.
-        # HEAD main already uses gsplat.color_correct which doesn't exist in 1.4.0.
-        subprocess.run(
-            ["git", "clone", "--depth", "1", "--branch", "v1.4.0",
-             "https://github.com/nerfstudio-project/gsplat.git",
-             str(gsplat_dir)],
-            check=True,
-        )
-        print("[gsplat] installing build tools and examples/requirements.txt...")
-        # Pre-install wheel + clang:
-        # - wheel: pycolmap (setuptools-based) needs bdist_wheel command
-        # - clang/clang++: fused-ssim, fused-bilagrid, ppisp CUDA extensions
-        subprocess.run(["pip", "install", "wheel"], check=True)
-        subprocess.run(
-            ["apt-get", "install", "-y", "--no-install-recommends", "clang"],
-            check=True,
-            env={**os.environ, "DEBIAN_FRONTEND": "noninteractive"},
-        )
-        # fused-ssim requires torch at build time; use --no-build-isolation so
-        # the already-installed torch in the image is visible to the build backend.
-        subprocess.run(
-            ["pip", "install", "--no-build-isolation", "-r", "examples/requirements.txt"],
-            check=True,
-            cwd=str(gsplat_dir),
-        )
-    else:
-        print("[gsplat] /tmp/gsplat already exists, skipping clone")
+    # gsplat repo + examples/requirements.txt are pre-installed at image build time
+    # (see .run_commands in the image definition above) — no clone needed at runtime.
+    gsplat_dir = Path("/opt/gsplat")
+    # (No clone, no pip install — both done at image build time)
 
     # --- Run simple_trainer ---
     # simple_trainer expects {data_dir}/sparse/0/ for COLMAP data and
@@ -298,6 +282,9 @@ def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
     #   {base}/sfm/images  →  symlink to {base}/frames
     sfm_dir = base / "sfm"
     images_link = sfm_dir / "images"
+    # Refresh any existing symlink to ensure correct target on warm containers
+    if images_link.is_symlink():
+        images_link.unlink()
     if not images_link.exists():
         images_link.symlink_to(base / "frames")
         print(f"[gsplat] created symlink {images_link} → {base / 'frames'}")
@@ -334,20 +321,57 @@ def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
         raise RuntimeError(f"simple_trainer.py exited with code {result.returncode}")
 
     # --- Convert .pt checkpoint → standard 3DGS PLY ---
-    # gsplat 1.4.0 simple_trainer saves .pt checkpoints, not PLY files.
-    # We convert the last checkpoint to the standard inria/3DGS PLY format
-    # that downstream tools (splat-transform, viewers) expect.
-    import numpy as np
-    import torch
-    from plyfile import PlyData, PlyElement
-
     ckpt_candidates = sorted((out_dir / "ckpts").glob("ckpt_*_rank0.pt"))
     if not ckpt_candidates:
         raise RuntimeError(f"No .pt checkpoint found under {out_dir / 'ckpts'}")
     ckpt_path = ckpt_candidates[-1]
-    print(f"[gsplat] converting checkpoint → PLY: {ckpt_path}")
+    dest_ply = base / "output.ply"
+    ply_size_bytes = _checkpoint_to_ply(ckpt_path, dest_ply)
 
+    # --- Parse PSNR lines from log tail ---
+    with open(log_path) as lf:
+        all_lines = lf.readlines()
+    tail_lines = all_lines[-200:]
+    psnr_log_tail = [
+        line.rstrip()
+        for line in tail_lines
+        if "psnr" in line.lower()
+    ]
+
+    volume.commit()
+
+    return {
+        "scene": scene_name,
+        "train_sec": round(train_sec, 2),
+        "max_steps": max_steps,
+        "ply_size_bytes": ply_size_bytes,
+        "psnr_log_tail": psnr_log_tail,
+    }
+
+
+def _checkpoint_to_ply(ckpt_path: Path, dest_path: Path) -> int:
+    """Convert a gsplat .pt checkpoint to a standard inria/3DGS PLY file.
+
+    Imports torch/numpy/plyfile inside the function body so they are only
+    resolved when called from inside a Modal container (they are not present
+    on the local machine).
+
+    Args:
+        ckpt_path: Path to the gsplat checkpoint file (ckpt_*_rank0.pt).
+        dest_path: Destination path for the output PLY file.
+
+    Returns:
+        Size of the written PLY file in bytes.
+    """
+    # Imports are kept local — torch/numpy only exist inside the Modal container.
+    import numpy as np
+    import torch
+    from plyfile import PlyData, PlyElement
+
+    print(f"[gsplat] converting checkpoint → PLY: {ckpt_path}")
     ckpt = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+    if "splats" not in ckpt:
+        raise RuntimeError(f"Unexpected checkpoint structure. Top-level keys: {list(ckpt.keys())}")
     splats = ckpt["splats"]
 
     means = splats["means"].float().numpy()          # [N, 3]
@@ -395,31 +419,11 @@ def train_gsplat(scene_name: str, max_steps: int = 30000) -> dict:
     for i in range(4):
         vertex_data[f"rot_{i}"] = quats[:, i]
 
-    dest_ply = base / "output.ply"
     ply_el = PlyElement.describe(vertex_data, "vertex")
-    PlyData([ply_el]).write(str(dest_ply))
-    ply_size_bytes = dest_ply.stat().st_size
-    print(f"[gsplat] PLY written: {dest_ply} ({ply_size_bytes} bytes, {N} gaussians)")
-
-    # --- Parse PSNR lines from log tail ---
-    with open(log_path) as lf:
-        all_lines = lf.readlines()
-    tail_lines = all_lines[-200:]
-    psnr_log_tail = [
-        line.rstrip()
-        for line in tail_lines
-        if "psnr" in line.lower() or "PSNR" in line
-    ]
-
-    volume.commit()
-
-    return {
-        "scene": scene_name,
-        "train_sec": round(train_sec, 2),
-        "max_steps": max_steps,
-        "ply_size_bytes": ply_size_bytes,
-        "psnr_log_tail": psnr_log_tail,
-    }
+    PlyData([ply_el]).write(str(dest_path))
+    ply_size_bytes = dest_path.stat().st_size
+    print(f"[gsplat] PLY written: {dest_path} ({ply_size_bytes} bytes, {N} gaussians)")
+    return ply_size_bytes
 
 
 @app.local_entrypoint()
